@@ -1,0 +1,86 @@
+{
+    "chara" : {
+        "meta" : {
+            "tags" : ["chara"]
+        },
+        "xform" : {
+            
+        },
+        "sprite" : {
+            "container": "entities",
+            "src" :  "hero",
+            "offsetx" : -17,
+            "offsety" : -30,
+            "scalex" : 4,
+            "scaley" : 4
+        },
+        "physics" : {
+            "width" : 35,
+            "height": 120,
+            "offsety" : -45
+        },
+        "moving" : {
+            
+        }
+    },
+    "pc" : {
+        "meta" : {
+            "inherit" : "chara",
+            "tagsBase" : ["pc"]
+        },
+        "controls" : {},
+        "interact.control" : {},
+        "sprite" : {
+            "src" :  "hero"
+        }
+    },
+    "enemy" : {
+        "meta" : {
+            "inherit" : "chara",
+            "tagsBase" : ["enemy"]
+        },
+        "sprite" : {
+            "src" :  "enemy"
+        }
+    },
+    "trigger" : {
+        "xform" : {
+            "container": "entities"
+        },
+        "physics" : {
+            "type" : 2
+        }
+    },
+    "item" : {
+        "meta" : { "inherit" : "trigger" },
+        "sprite" : {
+            "src" : "scifi_icons",
+            "frame" : 11,
+            "offsety" : -20,
+            "offsetx" : -12,
+            "container" : "entities"
+        },
+        "interact" : {},
+        "highlight" : {
+            "radius" : 8
+            },
+        "item" : {
+            "item" : "bomb"
+        }
+    },
+    "switch" : {
+        "meta" : {"inherit" : "trigger"},
+        "sprite" : {
+            "src" : "switch",
+            "frame" : 1,
+            "offsety" : -48,
+            "offsetx" : -16,
+            "container" : "entities"
+        },
+        "interact" : {},
+        "highlight" : {
+            "radius" : 32
+        },
+        "switch" : {}
+    }
+}

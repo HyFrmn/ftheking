@@ -1,0 +1,28 @@
+{
+    "sprites" : [
+        ["hero", [35,35]],
+        ["enemy", [35,35]]
+    ],
+    "images" : [
+
+    ],
+    "fonts" : [
+        "standard_white",
+        "standard_black"
+    ],
+    "tiles" : [
+        "basetiles"
+    ],
+    "entities" : [
+        "standard"
+    ],
+    "levels" : [
+        "test"
+    ],
+    "audio" : [
+        "menu.selection.click",
+        "select.up",
+        "select.down",
+        "explosion"
+    ]
+}

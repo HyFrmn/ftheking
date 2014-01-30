@@ -1,0 +1,37 @@
+{
+  "name": "Subzero",
+  "version": "0.0.0",
+  "description": "Hydra Game Engine",
+  "main": "Gruntfile.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Marshall Petersen",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "grunt": "~0.4.2",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-requirejs": "~0.4.1",
+    "requirejs": "~2.1.9"
+  },
+  "devDependencies": {
+    "grunt-contrib-compress": "~0.5.3",
+    "grunt-preprocess": "~4.0.0",
+    "requirejs": "~2.1.10"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HyFrmn/subzero.git"
+  },
+  "keywords": [
+    "game",
+    "javascript",
+    "pixijs"
+  ],
+  "bugs": {
+    "url": "https://github.com/HyFrmn/subzero/issues"
+  }
+}
