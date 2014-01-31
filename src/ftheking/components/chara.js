@@ -61,6 +61,7 @@ define([
 					this.setAnim('stand_' + this.get('chara.dir'));
 				}
 				*/
+				this.set('physics.vx', this.get('movement.speed') * this.get('movement.vx'));
 			}
 		});
 	}
