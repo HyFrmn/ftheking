@@ -34,6 +34,10 @@ define([
 			deregister: function(state){
 				// @if DEBUG
 				this.state.containers.underfoot.removeChild(this.indicater);
+				idx = this.state.physics.entities.indexOf(this.entity);
+				if (idx>=0){
+				    this.state.physics.entities.splice(idx, 1);
+				}
 				// @endif
 			},
 			// @if DEBUG

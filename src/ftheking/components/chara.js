@@ -9,6 +9,7 @@ define([
 				this.set('movement.vx', 0);
 				this.set('movement.vy', 0);
 				this.set('movement.speed', 140);
+				this.set('movement.dir', 1);
 				this._anim = null;
 				this._animTimeout = 0;
 				this._walkcycleFrames = {
@@ -35,10 +36,19 @@ define([
 				
 				if (this.get('movement.vx')<0){
 					this.set('sprite.scalex', -4);
+					this.set('movement.dir', -1);
+
 				}
 
 				if (this.get('movement.vx')>0){
 					this.set('sprite.scalex', 4);
+					this.set('movement.dir', 1);
+				}
+
+				if (this.get('movement.vx')!=0){
+					this.entity.anim.setAnim('walk');
+				} else {
+					this.entity.anim.setAnim('idle');
 				}
 				/*
 				if (this.get('movement.vy')<0){

@@ -94,7 +94,9 @@ define([
 							[entity.get('physics.width')/2, entity.get('physics.height')/2],
 							[entity.get('physics.width')/2, -entity.get('physics.height')/2],
 							[-entity.get('physics.width')/2, entity.get('physics.height')/2],
-							[-entity.get('physics.width')/2, -entity.get('physics.height')/2]
+							[-entity.get('physics.width')/2, -entity.get('physics.height')/2],
+							[entity.get('physics.width')/2, 0],
+							[-entity.get('physics.width')/2, 0]
 						]
 						var horzMove = true;
 						var vertMove = true;

@@ -1,3 +1,5 @@
 .tmp/
 node_modules/
 art/
+game.zip
+.DS_Store

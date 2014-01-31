@@ -16,7 +16,7 @@ define([
         
 		var TiledLevel = function(state, map, levelData){
 			var defered = new sge.When.defer();
-			var tileset = new PIXI.ImageLoader('content/tiles/basetiles.png', false);
+			var tileset = new PIXI.ImageLoader('content/tilesets/basetiles.png', false);
 			tileset.addEventListener("loaded", function(event){
 
 				var layerData = {};
@@ -114,6 +114,7 @@ define([
 								
 
 							}.bind(this));
+							console.log({xform: {tx: entityData.x+(map.tileSize/2), ty: entityData.y-map.tileSize+(map.tileSize/2)}})
 							eData = deepExtend(eData, {xform: {tx: entityData.x+(map.tileSize/2), ty: entityData.y-map.tileSize+(map.tileSize/2)}}); //-32 for tiled hack.
 							
 							var spawn = true;
@@ -137,7 +138,7 @@ define([
 							}
 							entity.name = name;
 							// @if DEBUG
-							console.warn('Created Entity:', name, entityData.type);
+							console.warn('Created Entity:', name, entityData.type, entity.get('xform.tx'), entity.get('xform.ty'));
 							// @endif
 							if (spawn){
 								state.addEntity(entity);	

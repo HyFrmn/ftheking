@@ -15,10 +15,8 @@ define([
 					this.set('movement.vx', dpad[0]*2);
 				}
 
-				if (this.input.isDown('X')){
-					this.set('sprite.frame', 1);
-				} else {
-					this.set('sprite.frame', 0);
+				if (this.input.isPressed('X')){
+					this.entity.attack.attack();
 				}
 
 				if (this.input.isPressed('enter')){
@@ -30,6 +28,13 @@ define([
 						this.set('physics.vy', -450);
 					}
 				}
+				/*
+				if (this.get('movement.vx')!=0 && this.entity.physics.grounded){
+					this.entity.anim._defaultAnim = 'walk'
+				} else {
+					this.entity.anim._defaultAnim = 'idle'
+				}
+				*/
 				this.set('physics.vx', this.get('movement.speed') * this.get('movement.vx'));
 			},
 			register: function(state){

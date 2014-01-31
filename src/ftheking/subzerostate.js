@@ -110,6 +110,7 @@ define([
 			initGame: function(){
 				var pc = this.getEntity('pc');
 				this.pc = pc;
+				/*
 				if (this.pc){
 					this.hud.setPC(pc);
 					if (this.game.data.spawn){
@@ -118,6 +119,8 @@ define([
 						this.pc.set('xform.ty', spawnEntity.get('xform.ty'));
 					}
 				}
+				*/
+				console.log(this.pc.get('xform.tx'),this.pc.get('xform.ty'))
 
 				var names = Object.keys(this.game.data.persist.entities);
 				for (var i = names.length - 1; i >= 0; i--) {

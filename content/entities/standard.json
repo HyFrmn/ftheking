@@ -10,14 +10,14 @@
             "container": "entities",
             "src" :  "hero",
             "offsetx" : -17,
-            "offsety" : -30,
+            "offsety" : -34 ,
             "scalex" : 4,
             "scaley" : 4
         },
         "physics" : {
             "width" : 35,
             "height": 120,
-            "offsety" : -45
+            "offsety" : -60
         },
         "moving" : {
             
@@ -32,6 +32,21 @@
         "interact.control" : {},
         "sprite" : {
             "src" :  "hero"
+        },
+        "attack" : {},
+        "anim" : {
+            "tracks" : {
+                "attack" : {
+                    "frames" : [0, 1],
+                    "once" : true
+                },
+                "idle" : {
+                    "frames" : [4]
+                },
+                "walk" : {
+                    "frames" : [4,5,6,7]
+                }
+            }
         }
     },
     "enemy" : {
@@ -41,6 +56,21 @@
         },
         "sprite" : {
             "src" :  "enemy"
+        },
+        "attack" : {},
+        "anim" : {
+            "tracks" : {
+                "attack" : {
+                    "frames" : [0, 1],
+                    "once" : true
+                },
+                "idle" : {
+                    "frames" : [4]
+                },
+                "walk" : {
+                    "frames" : [4,5,6,7]
+                }
+            }
         }
     },
     "trigger" : {
@@ -50,37 +80,5 @@
         "physics" : {
             "type" : 2
         }
-    },
-    "item" : {
-        "meta" : { "inherit" : "trigger" },
-        "sprite" : {
-            "src" : "scifi_icons",
-            "frame" : 11,
-            "offsety" : -20,
-            "offsetx" : -12,
-            "container" : "entities"
-        },
-        "interact" : {},
-        "highlight" : {
-            "radius" : 8
-            },
-        "item" : {
-            "item" : "bomb"
-        }
-    },
-    "switch" : {
-        "meta" : {"inherit" : "trigger"},
-        "sprite" : {
-            "src" : "switch",
-            "frame" : 1,
-            "offsety" : -48,
-            "offsetx" : -16,
-            "container" : "entities"
-        },
-        "interact" : {},
-        "highlight" : {
-            "radius" : 32
-        },
-        "switch" : {}
     }
 }

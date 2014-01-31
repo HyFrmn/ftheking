@@ -22991,7 +22991,7 @@ define('ftheking/tiledlevel',[
         
 		var TiledLevel = function(state, map, levelData){
 			var defered = new sge.When.defer();
-			var tileset = new PIXI.ImageLoader('content/tiles/basetiles.png', false);
+			var tileset = new PIXI.ImageLoader('content/tilesets/basetiles.png', false);
 			tileset.addEventListener("loaded", function(event){
 
 				var layerData = {};
@@ -23089,6 +23089,7 @@ define('ftheking/tiledlevel',[
 								
 
 							}.bind(this));
+							console.log({xform: {tx: entityData.x+(map.tileSize/2), ty: entityData.y-map.tileSize+(map.tileSize/2)}})
 							eData = deepExtend(eData, {xform: {tx: entityData.x+(map.tileSize/2), ty: entityData.y-map.tileSize+(map.tileSize/2)}}); //-32 for tiled hack.
 							
 							var spawn = true;
@@ -24252,7 +24253,9 @@ define('ftheking/physics',[
 							[entity.get('physics.width')/2, entity.get('physics.height')/2],
 							[entity.get('physics.width')/2, -entity.get('physics.height')/2],
 							[-entity.get('physics.width')/2, entity.get('physics.height')/2],
-							[-entity.get('physics.width')/2, -entity.get('physics.height')/2]
+							[-entity.get('physics.width')/2, -entity.get('physics.height')/2],
+							[entity.get('physics.width')/2, 0],
+							[-entity.get('physics.width')/2, 0]
 						]
 						var horzMove = true;
 						var vertMove = true;
@@ -24412,10 +24415,8 @@ define('ftheking/components/rpgcontrols',[
 					this.set('movement.vx', dpad[0]*2);
 				}
 
-				if (this.input.isDown('X')){
-					this.set('sprite.frame', 1);
-				} else {
-					this.set('sprite.frame', 0);
+				if (this.input.isPressed('X')){
+					this.entity.attack.attack();
 				}
 
 				if (this.input.isPressed('enter')){
@@ -24426,6 +24427,11 @@ define('ftheking/components/rpgcontrols',[
 					if (this.entity.physics.grounded){
 						this.set('physics.vy', -450);
 					}
+				}
+				if (this.get('movement.vx')!=0 && this.entity.physics.grounded){
+					this.entity.anim.setAnim('walk')
+				} else {
+					this.entity.anim.setAnim('idle')
 				}
 				this.set('physics.vx', this.get('movement.speed') * this.get('movement.vx'));
 			},
@@ -24495,6 +24501,595 @@ define('ftheking/components/chara',[
 				*/
 			}
 		});
+	}
+);
+define('ftheking/components/attack',[
+	'sge',
+	'../component',
+	'../sat'
+	], function(sge, Component, sat){
+		Component.add('attack', {
+			init: function(entity, data){
+				this._super(entity, data);
+			},
+			attack: function(){
+				this.entity.anim.setAnim('attack');
+				var entities = this.state.findEntities(this.get('xform.tx'), this.get('xform.ty'), 140).filter(function(e){
+					return e!=this.entity;
+				}.bind(this));
+				var response = new sat.Response();
+				var hitbox = new sat.Box(new sat.Vector(this.get('xform.tx')-70,this.get('xform.ty')-140), 140, 140);
+				for (var i = entities.length - 1; i >= 0; i--) {
+					var ep = entities[i];
+					var bRect = new sat.Box(new sat.Vector(ep.get('xform.tx')+ep.get('physics.offsetx'),ep.get('xform.ty')+ep.get('physics.offsety')), ep.get('physics.width'), ep.get('physics.height'));
+					collided = sat.testPolygonPolygon(hitbox.toPolygon(), bRect.toPolygon(), response);
+					if (collided){
+						this.state.removeEntity(ep);
+						response.clear();
+					}
+
+				};
+			}
+		});		
+	}
+);
+define('ftheking/components/physics',[
+	'sge',
+	'../component'
+	], function(sge, Component){
+		Component.add('physics', {
+			init: function(entity, data){
+				this._super(entity, data);
+				this.set('physics.type', data.type!=undefined ? data.type : 0);
+				this.set('physics.width', data.width || 24);
+				this.set('physics.height', data.height || 24);
+				this.set('physics.offsetx', data.offsetx || 0);
+				this.set('physics.offsety', data.offsety || 0);
+				this.set('physics.vx', 0);
+				this.set('physics.vy', 0);
+				
+			},
+			register: function(state){
+				this._super(state);
+				if (this.get('physics.type')==0){
+				    state.physics.entities.push(this.entity);   
+				}
+			},
+			deregister: function(state){
+			},
+		});		
+	}
+);
+define('ftheking/components/sound',[
+	'sge',
+	'../component'
+	], function(sge, Component){
+		var extend = function(destination, source)
+        {
+            for (var property in source)
+            {
+                if (destination[property] && (typeof(destination[property]) == 'object')
+                        && (destination[property].toString() == '[object Object]') && source[property])
+                    extend(destination[property], source[property]);
+                else
+                    destination[property] = source[property];
+            }
+            return destination;
+        }
+
+		Component.add('sound', {
+			init: function(entity, data){
+				this._super(entity, data);
+			},
+			register: function(state){
+				this._super(state);
+				this.on('sound.emit', this.emit);
+			},
+			emit: function(sound){
+				sound = extend({
+					importance: 3,
+					entity: this.entity
+				}, sound)
+				var tx = this.get('xform.tx');
+				var ty = this.get('xform.ty');
+				sound.entity = this.entity;
+				var found = this.state.findEntities(
+						tx, 
+						ty,
+						sound.volume || 128
+					)
+				for (var i = found.length - 1; i >= 0; i--) {
+					found[i].trigger('sound.hear', tx, ty, sound)
+				};
+			}
+		});		
+	}
+);
+define('ftheking/components/interact',[
+	'sge',
+	'../component'
+	], function(sge, Component){
+		var InteractComponent = Component.add('interact', {
+			init: function(entity, data){
+				this._super(entity, data);
+				this._targets = data.targets;
+				this._proxy = data.proxy;
+			},
+			register: function(state){
+				this._super(state);
+				if (this._targets){
+					this._proxies = [];
+					for (var i = this._targets.length - 1; i >= 0; i--) {
+						var target = this._targets[i];
+						if (target[0]==0 && target[1]==0){
+							continue;
+						}
+						var proto = {
+							xform: {
+								tx: this.get('xform.tx') + (target[0]*32),
+								ty: this.get('xform.ty') + (target[1]*32),
+							},
+							interact: {
+								proxy: this.entity,
+							},
+							highlight: {
+								radius: 24
+							}
+						}
+						var proxy = state.factory.create('trigger', proto);
+						state.addEntity(proxy)
+						this._proxies.push(proxy);
+					};
+				}
+				if (this._proxy){
+					this.on('interact', this.interact);
+				}
+			},
+			deregister: function(state){
+				this._super(state);
+				if (this._proxy){
+					this.off('interact', this.interact);
+				}
+			},
+			interact: function(entity){
+				this._proxy.trigger('interact', entity)
+			}
+		});
+
+		var InteractControlComponent = Component.add('interact.control', {
+			init: function(entity, data){
+				this._super(entity, data);
+				this._current = null;
+			},
+			register: function(state){
+				this._super(state);
+				this.on('interact', this.interact);
+			},
+			deregister: function(state){
+				this._super(state);
+				this.off('interact', this.interact);
+			},
+			interact: function(){
+				if (this._current){
+					this._current.trigger('interact', this.entity);
+				}
+			},
+			tick: function(delta){
+				var tx = this.get('xform.tx');
+				var ty = this.get('xform.ty');
+				var targets = this.state.findEntities(tx, ty, 32).filter(function(e){
+					return e.interact!=undefined && e.interact.enabled;
+				});
+				targets.sort(function(a,b){return b._findDist-a._findDist});
+				if (this._current!=targets[0]){
+					if (this._current){
+						this._current.trigger('highlight.off');
+						this._current = null;
+					}
+					this._current=targets[0];
+					if (this._current){
+						this._current.trigger('highlight.on');
+					}
+				}
+			}
+		});
+	}
+);
+define('ftheking/components/anim',[
+	'sge',
+	'../component'
+	], function(sge, Component){
+		Component.add('anim', {
+			init: function(entity, data){
+				this._super(entity, data);
+				this._tracks = data.tracks;
+				this._currentTrack = null
+				this._index=0;
+				this._animTimeout = 0;
+			},
+			register: function(state){
+				this._super(state);
+				this.on('anim.set', this.setAnim);
+			},
+			deregister: function(state){
+				this._super(state);
+				this.off('anim.set', this.setAnim);
+			},
+			setAnim: function(anim){
+				this._currentTrack = this._tracks[anim];
+			},
+			tick: function(delta){
+				if (this._currentTrack!=null){
+					this._animTimeout-=delta;
+					if (this._animTimeout<=0){
+						this._animTimeout=1/30;
+						this._index++;
+						if (this._index>=this._currentTrack.frames.length){
+							if (this._currentTrack.once){
+								this._index=0;
+								this._currentTrack = null;
+								this.entity.trigger('anim.done');
+								this.setAnim('idle');
+								return;
+							} else {
+								this._index = 0;
+							}
+						}
+						this.set('sprite.frame', this._currentTrack.frames[this._index]);
+					}
+				}
+				
+			}
+		});		
+	}
+);
+define('ftheking/components/item',[
+	'sge',
+	'../component'
+	], function(sge, Component){
+		Component.add('item', {
+			init: function(entity, data){
+				this._super(entity, data);
+				this.set('item.item', data.item);
+			},
+			register: function(state){
+				this._super(state);
+				this.on('interact', this.interact);
+			},
+			deregister: function(state){
+				this._super(state);
+				this.off('interact', this.interact);
+			},
+			interact: function(e){
+				if (e.inventory){
+					e.inventory.addItem(this.get('item.item'));
+				}
+				this.state.removeEntity(this.entity);
+			},
+			tick: function(delta){
+
+			}
+		});		
+	}
+);
+define('ftheking/components/equipable',[
+	'sge',
+	'../component'
+	], function(sge, Component){
+		Component.add('equipable', {
+			init: function(entity, data){
+				this._super(entity, data);
+				this._equiped = null;
+			},
+			register: function(state){
+				this._super(state);
+				this.on('item.equip', this.itemEquip)
+				this.on('item.use', this.itemUse)
+			},
+			deregister: function(state){
+				this._super(state);
+				this.off('item.equip', this.itemEquip);
+				this.off('item.use', this.itemUse)
+			},
+			itemEquip: function(item){
+				this._equiped = item;
+				this.entity.trigger('item.equiped', this._equiped);
+			},
+			itemUse: function(){
+				if (this._equiped){
+					inv = this.entity.inventory.items;
+					if (inv[this._equiped]>0){
+						inv[this._equiped]--;
+						//TODO: Replace with real item used code.
+						var bomb = this.state.factory.create(this._equiped, {
+							xform: {
+								tx: this.get('xform.tx'),
+								ty: this.get('xform.ty')
+							}
+						})
+						this.state.addEntity(bomb);
+						if (inv[this._equiped]<=0){
+							this.itemEquip(null);
+						}
+					}
+				}
+			}
+
+		});		
+	}
+);
+define('ftheking/components/switch',[
+	'sge',
+	'../component'
+	], function(sge, Component){
+		Component.add('switch', {
+			init: function(entity, data){
+				this._super(entity, data);
+				this.set('switch.on', data.on || false);
+				this.set('switch.entity', data.entity);
+			},
+			register: function(state){
+				this._super(state);
+				this.on('interact', this.interact);
+			},
+			deregister: function(state){
+				this._super(state);
+				this.off('interact', this.interact);
+			},
+			interact: function(){
+				this.set('switch.on', !this.get('switch.on'));
+				this.update();
+				var entityName = this.get('switch.entity');
+				if (entityName){
+					var entity = this.state.getEntity(entityName);
+					if (entity){
+						entity.trigger('interact');
+					}
+				}
+			},
+			update: function(){
+				this.set('sprite.frame', this.get('switch.on') ? 1 : 0);
+			}
+		});		
+	}
+);
+define('ftheking/components/persist',[
+	'sge',
+	'../component'
+	], function(sge, Component){
+		Component.add('persist', {
+			init: function(entity, data){
+				this._super(entity, data);
+				this._attrs = data.attrs;
+				this._global = Boolean(data.global);
+			},
+			register: function(state){
+				this._super(state);
+				this.on('persist', this.persist);
+			},
+			deregister: function(state){
+				this._super(state);
+				this.off('persist', this.persist);
+			},
+			persist: function(){
+				var mapName = this.state.game.data.map;
+				var gameData = this.state.game.data.persist;
+				var persistData = {};
+				for (var i = this._attrs.length - 1; i >= 0; i--) {
+					var attr = this._attrs[i];
+					persistData[attr] = this.get(attr);
+				}
+				if (this._global){
+					gameData.entities[this.entity.name] = persistData;
+				} else {
+					gameData.maps[mapName].entities[this.entity.name] = persistData;
+				}
+			}
+		});		
+	}
+);
+define('ftheking/factory',[
+	'sge',
+	'./entity',
+	'./components/sprite',
+	'./components/rpgcontrols',
+	'./components/chara',
+	'./components/attack',
+	'./components/physics',
+	'./components/sound',
+	'./components/interact',
+	'./components/anim',
+	'./components/item',
+	'./components/equipable',
+	'./components/switch',
+	'./components/persist'
+	],function(sge, Entity){
+		var deepExtend = function(destination, source) {
+          for (var property in source) {
+            if (source[property] && source[property].constructor &&
+             source[property].constructor === Object) {
+              destination[property] = destination[property] || {};
+              arguments.callee(destination[property], source[property]);
+            } else {
+              destination[property] = source[property];
+            }
+          }
+          return destination;
+        };
+
+		var _Factory = sge.Class.extend({
+			init: function(){
+				this.blueprints = {}
+			},
+			load: function(data){
+				for (var prop in data) {
+			      // important check that this is objects own property 
+			      // not from prototype prop inherited
+			      if(data.hasOwnProperty(prop)){
+			        this.blueprints[prop] = data[prop];
+			      }
+			   }
+			},
+			has: function(typ){
+				return (this.blueprints[typ]!==undefined);
+			},
+			create: function(typ, data){
+				var tags = [];
+				if (data===undefined){
+					data = {}
+				}
+
+				if (this.blueprints[typ]==undefined){
+					return;
+				}
+
+				var entityData = deepExtend({}, this.blueprints[typ]);
+
+				if (data.meta!==undefined){
+					if (data.meta.tag){
+						tags = tags.concat(data.meta.tag);
+					}
+				}
+				if (entityData.meta!==undefined){
+					if (entityData.meta.tagsBase){
+						tags = tags.concat(entityData.meta.tagsBase);
+					}
+
+					if (entityData.meta.inherit!==undefined){
+						var inherit = entityData.meta.inherit;
+						var bases = [typ, inherit];
+						while (inherit!=null){
+							baseData = this.blueprints[inherit];
+							inherit = null;
+							if (baseData.meta!==undefined){
+								if (baseData.meta.tags){
+									tags = tags.concat(baseData.meta.tags);
+								}
+								if (baseData.meta.inherit){
+									inherit = baseData.meta.inherit;
+									bases.push(inherit);
+								}
+							}
+						}
+						entityData = {};
+						bases.reverse();
+						while (bases.length){
+							base = bases.shift();
+							entityData = deepExtend(entityData, this.blueprints[base]);
+						}
+					}
+
+				}
+				
+				entityData = deepExtend(entityData, data);
+				
+
+				if (entityData['meta']!==undefined){
+					delete entityData['meta'];
+				}
+				var entity = Entity.Factory(entityData);
+				entity.tags = entity.tags.concat(tags);
+				return entity;
+			}
+		})
+		Factory = new _Factory();
+		return Factory;
+});
+define('ftheking/social',[
+	'sge',
+	], function(sge){
+		var SocialSystem = sge.Class.extend({
+			init: function(){
+				this._socialMap = [];
+			},
+			setMap : function(map){
+				this.map = map;
+				/*
+				this.map.getTiles().forEach(function(t){
+						return t.data.socialValue = t.layers.base==16 ? 1 : 0;
+				});
+				*/
+				for (var i = this.map.width - 1; i >= 0; i--) {
+					this.map.getTile(i,0).data.socialValue=-1;
+					this.map.getTile(i,0).data.socialVector = [0, -1];
+					this.map.getTile(i,this.map.height-1).data.socialValue=-1;
+					this.map.getTile(i,0).data.socialVector = [0, 1];
+				};
+				for (var i=0; i<2;i++){
+					this.diffuseMap();
+				}
+				this.calcGradient();
+			},
+			diffuseMap: function(){
+				var origMap = this.map.getTiles().map(function(x){return x.data.socialValue});
+				for (var x = 0; x<this.map.width; x++){
+					for (var y=0; y<this.map.height; y++){
+
+						var value = 0;
+						var count = 0;
+
+						for (var j=-1;j<2;j++){
+							for(var k=-1;k<2;k++){
+								var amt = this.getData(x+j,y+k, origMap);
+								if (amt!=undefined){
+									value += amt;
+									count++;
+								}
+							}
+						}
+						this.map.getTile(x, y).data.socialValue = Math.max((value/count),this.getData(x,y, origMap));
+					}
+				}
+			},
+			calcGradient : function(){
+				for (var x = 1; x<this.map.width-1; x++){
+
+					for (var y=1; y<this.map.height-1; y++){
+						
+						var ax = x-1;
+						var bx = x+1;
+
+						var amtAx = this.map.getTile(ax,y).data.socialValue;
+						var amtBx = this.map.getTile(bx,y).data.socialValue;
+						
+						var dx = (amtBx - amtAx) / 2;
+
+						var ay = y-1;
+						var by = y+1;
+
+						var amtAy = this.map.getTile(x,ay).data.socialValue;
+						var amtBy = this.map.getTile(x,by).data.socialValue;
+						
+						var dy = (amtBy - amtAy) / 2;
+
+						var dist = Math.sqrt((dx*dx)+(dy*dy));
+						if (dist==0){
+							this.map.getTile(x,y).data.socialVector=[0,0];
+						} else {
+							this.map.getTile(x,y).data.socialVector=[dx/dist,dy/dist];
+						}
+					}
+				}
+			},
+			getIndex : function(x, y){
+	            var index = (y * this.map.width) + x;
+	            if (x > this.map.width-1 || x < 0){
+	                return null;
+	            }
+	            if (y > this.map.height-1 || y < 0){
+	                return null;
+	            }
+	            return index;
+	        },
+	        getData : function(x, y, arr){
+	            return arr[this.getIndex(x, y)];
+	        },
+	        getTileAtPos : function(x, y){
+	        	return this.getTile(Math.floor(x / this.tileSize), Math.floor(y / this.tileSize))
+	        },
+		})
+
+		return SocialSystem;
 	}
 );
 define('ftheking/behaviour',[
@@ -24782,1097 +25377,6 @@ define('ftheking/ai',[
 		return AI;
 	}
 );
-define('ftheking/components/ai',[
-	'sge',
-	'../component',
-	'../behaviour',
-	'../ai'
-	], function(sge, Component, Behaviour, AI){
-		var proxyTarget = function(tx, ty){
-			this.data = {
-				'xform.tx': tx,
-				'xform.ty': ty
-			}
-			this.get = function(attr){
-				return this.data[attr];
-			}
-		}
-
-		var Planner = sge.Observable.extend({
-			init: function(comp){
-				this.comp = comp;
-				this.entity = comp.entity;
-				this.state = comp.state;
-				this._interupt = false;
-				this._instructions=[];
-				this._ignoreList=[];
-			},
-			interupt: function(){
-				if (this._interupt){
-					this._interupt=false;
-					this.comp.next();
-					return true;
-				}
-				return false;
-			},
-			next: function(){
-				return {xtype: 'idle'}
-			}
-		});
-
-		var CitizenPlanner = Planner.extend({
-			init: function(comp){
-				this._super(comp);
-				this.entity.on('sound.hear', this.soundCallback.bind(this));
-				this._instructions = [];
-				this._ignoreList = [];
-				this._interupt=false;
-			},
-			soundCallback: function(tx, ty, sound){
-				if (sound.type==0){
-					if (this._ignoreList.indexOf(sound.entity)<0){
-						this._ignoreList.push(sound.entity)
-						this._instructions = sound.instructions;
-						this._interupt=true;
-					}
-				}
-				if (sound.type==1){
-					if (this._ignoreList.indexOf(sound.entity)<0){
-						this._ignoreList.push(sound.entity)
-						this._instructions = [{xtype: 'goaway', importance: sound.importance, target: new proxyTarget(tx, ty), timeout: sound.volume/64, importance: 8}];
-						this._interupt=true;
-					}
-				}
-			},
-			interupt: function(){
-				if (this._super()){
-					return true;
-				}
-				if (this.comp.behaviour.importance>=6){
-					return false;
-				}
-				var tile = this.entity.get('map.tile');
-				if (tile){
-					if (tile.data.socialValue<0.8){
-						this.entity.set('movement.vx', tile.data.socialVector[0]);
-						this.entity.set('movement.vy', tile.data.socialVector[1]);
-						return true;
-					}
-				}
-				if (this._interupt){
-					this._interupt=false;
-					this.comp.next();
-					return true;
-				}
-				return false;
-			},
-			next: function(){
-				if (this._instructions.length){
-					return this._instructions.shift();
-				}
-				return {xtype: 'idle'}
-			}
-		});
-
-		var MerchantPlanner = Planner.extend({
-			interupt: function(){
-				
-					var tile = this.entity.get('map.tile');
-					if (tile){
-						if (tile.data.socialValue<0.8){
-							this.entity.set('movement.vx', tile.data.socialVector[0]);
-							this.entity.set('movement.vy', tile.data.socialVector[1]);
-							return true;
-						}
-					}
-				
-				return false;
-			},
-			next: function(){
-				return {xtype: 'sell'}
-			}
-		});
-
-		var GuardPlanner = Planner.extend({
-			init: function(comp){
-				this._super(comp);
-				this.entity.on('sound.hear', this.soundCallback.bind(this));
-				this._home = new proxyTarget(this.entity.get('xform.tx'),this.entity.get('xform.ty'))
-				
-			},
-			soundCallback: function(tx, ty, sound){
-				if (sound.type==1){
-						this._ignoreList.push(sound.entity);
-						var instructions = [{xtype: 'goto', distance: 32, importance: sound.importance, target: new proxyTarget(tx, ty)},{xtype:'wait', timeout:5, importance: sound.importance}];
-						if (sound.importance>=this.comp.behaviour.importance){
-							this._instructions = instructions;
-							this._interupt=true;
-						} else {
-							this._instructions = this._instructions.concat(instructions);
-						}
-						this.entity.trigger('emote.msg', 'What the hell?');
-				}
-			},
-			next: function(){
-				if (this._instructions.length>0){
-					return this._instructions.shift();
-				}
-				var tx = this.entity.get('xform.tx');
-				var ty = this.entity.get('xform.ty');
-
-				var targetx = this._home.get('xform.tx');
-				var targety = this._home.get('xform.ty');
-
-				var dx = tx - targetx;
-				var dy = ty - targety;
-				var dist = Math.sqrt(dx*dx+dy*dy);
-				if (dist<16){
-					this.entity.set('chara.dir', 'down')
-					return {xtype: 'wait'}
-				}
-				return {xtype: 'goto', target: this._home};
-			}
-		});
-
-		PLANNER = {
-			'citizen' : CitizenPlanner,
-			'merchant' : MerchantPlanner,
-			'guard' : GuardPlanner
-		}
-
-		Component.add('ai', {
-			init: function(entity, data){
-				this._super(entity, data);
-			    this.set('ai.planner', data.planner || 'citizen');
-			    this._timeout = 0;
-			    this.behaviour = null;
-
-			},
-			register: function(state){
-				this._super(state);
-				this.planner = new PLANNER[this.get('ai.planner')](this)
-				this.next();
-			},
-			next : function(){
-				this.changeBehaviour(this.planner.next());
-			},
-			changeBehaviour: function(data){
-				if (this.behaviour && this.behaviour.running){
-					this.behaviour.stop();
-				}
-				this.behaviour = Behaviour.Create(this, data);
-				this.behaviour.start()
-			},
-			tick: function(delta){
-				//Check planning for interupt.
-				if (this.planner.interupt()){
-					return;
-				}
-				
-				//Tick current behaviour.
-				this.behaviour.tick(delta);
-			}
-		});		
-	}
-);
-define('ftheking/components/physics',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('physics', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this.set('physics.type', data.type!=undefined ? data.type : 0);
-				this.set('physics.width', data.width || 24);
-				this.set('physics.height', data.height || 24);
-				this.set('physics.offsetx', data.offsetx || 0);
-				this.set('physics.offsety', data.offsety || 0);
-				this.set('physics.vx', 0);
-				this.set('physics.vy', 0);
-				
-			},
-			register: function(state){
-				this._super(state);
-				if (this.get('physics.type')==0){
-				    state.physics.entities.push(this.entity);   
-				}
-			},
-			deregister: function(state){
-			},
-		});		
-	}
-);
-define('ftheking/components/sound',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		var extend = function(destination, source)
-        {
-            for (var property in source)
-            {
-                if (destination[property] && (typeof(destination[property]) == 'object')
-                        && (destination[property].toString() == '[object Object]') && source[property])
-                    extend(destination[property], source[property]);
-                else
-                    destination[property] = source[property];
-            }
-            return destination;
-        }
-
-		Component.add('sound', {
-			init: function(entity, data){
-				this._super(entity, data);
-			},
-			register: function(state){
-				this._super(state);
-				this.on('sound.emit', this.emit);
-			},
-			emit: function(sound){
-				sound = extend({
-					importance: 3,
-					entity: this.entity
-				}, sound)
-				var tx = this.get('xform.tx');
-				var ty = this.get('xform.ty');
-				sound.entity = this.entity;
-				var found = this.state.findEntities(
-						tx, 
-						ty,
-						sound.volume || 128
-					)
-				for (var i = found.length - 1; i >= 0; i--) {
-					found[i].trigger('sound.hear', tx, ty, sound)
-				};
-			}
-		});		
-	}
-);
-define('ftheking/components/bomb',[
-		'sge',
-		'../component'
-	], function(sge, Component){
-		Component.add('explosion', {
-			register: function(state){
-				this._super(state);
-				this._frame= 0;
-				this._anim = 0;
-				createjs.Sound.play('explosion');
-			},
-			tick: function(delta){
-				if (this._anim<=0){
-					this._anim = (1/30);
-					this.set('sprite.frame', this._frame++);
-					if (this._frame>=16){
-						this.state.removeEntity(this.entity);
-					}
-				} else {
-					this._anim -= delta;
-				}
-			}
-	})
-
-		Component.add('bomb', {
-			register: function(state){
-				this._super(state);
-				this._timeout = state.getTime() + 3;
-			},
-			tick: function(delta){
-				if (this.state.getTime()>this._timeout){
-					this.entity.trigger('sound.emit', {
-						type: 1,
-						volume: 1024,
-						importance: 6
-					})
-					
-					
-					for (var i = 0; i < 3; i++) {
-						var scale = (Math.random()*2-1)*0.5 + 1;
-						var explo = this.state.factory.create('explosion', {
-							xform: {
-								tx: this.get('xform.tx') + (Math.random()*2-1)*32,
-								ty: this.get('xform.ty') + (Math.random()*2-1)*32
-							},
-							"sprite" : {
-					            "src" : "explosion",
-					            "container": "glow",
-					            "offsetx" : -32,
-					            "offsety" : -32,
-								scalex: scale,
-								scaley: scale
-							}
-						})
-						this.state.addEntity(explo);
-						
-					}
-					this.state.removeEntity(this.entity);
-
-				}
-			}
-		})
-	}
-);
-define('ftheking/components/emote',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('emote', {
-			init: function(entity, data){
-				this._super(entity, data);
-			},
-			register: function(state){
-				this._super(state);
-				this._visible = false;
-				this.text = new PIXI.BitmapText("", {font: "20px 8bit"});
-				this.text.position.x = 300;
-				this.text.position.y = 300;
-				this._timeout = -1;
-				this.on('emote.msg', this.emote);
-			},
-			emote: function(msg){
-				if (!this._visible){
-					this.text.setText(msg);
-					this.state.containers.overhead.addChild(this.text);
-					this._timeout = this.state.getTime() + 1;
-					this._visible = true;
-				}
-			},
-			clear: function(){
-				this._timeout = -1;
-				this.state.containers.overhead.removeChild(this.text);
-				this._visible = false;
-			},
-			tick: function(){
-				if(this._timeout>0 && this._timeout<this.state.getTime()){
-					this.clear()
-				}
-			},
-			render: function(){
-				if (this._visible){
-					this.text.position.x = this.get('xform.tx');
-					this.text.position.y = this.get('xform.ty')-64;
-				}
-			}
-		});		
-	}
-);
-define('ftheking/components/guardpost',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('guardpost', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this.indicater = new PIXI.Graphics();
-				this.indicater.alpha = 0.65;
-				this.active = null;
-				this._alarm = false;
-				this._timeout  = 0;
-			},
-			update: function(active){
-				this.active = active;
-				this.indicater.clear();
-				if (this._alarm){
-					var radius = 16 + (8 * Math.sin(this.state.getTime()*4))
-					this.indicater.beginFill('0xFF0000');
-					this.indicater.drawCircle(0,0,radius);
-				} else  if (active){
-					this.indicater.beginFill('0x00FF00');
-					this.indicater.drawCircle(0,0,24);
-				} else {
-					this.indicater.beginFill('0xFFFF00');
-					this.indicater.drawCircle(0,0,24);
-				}
-			},
-			tick: function(delta){
-				var nearby = this.state.findEntities(this.get('xform.tx'),
-														this.get('xform.ty'),
-														64);
-				var guards = nearby.filter(function(e){return e.tags.indexOf('guard')>=0});
-				var pcs = nearby.filter(function(e){return e.tags.indexOf('pc')>=0});
-				
-				if (pcs.length>0 && this.active){
-					if (!this._alarm){
-						this.alarm();
-					}
-					if (this._timeout<this.state.getTime()){
-						this.state.loseGame();
-					}
-				} else {
-					this._alarm = false;
-				}
-				this.update(guards.length>0);
-			},
-			register: function(state){
-				this._super(state);
-				this.state.containers.underfoot.addChild(this.indicater)
-			},
-			render: function(){
-				this.indicater.position.x = this.get('xform.tx');
-				this.indicater.position.y = this.get('xform.ty');
-			},
-			alarm: function(){
-				this._alarm = true;
-				this.entity.trigger('sound.emit', {
-					type: 1,
-					volume: 96,
-					importance: 9
-				});
-				this._timeout = this.state.getTime() + 1.5;
-			}
-		});		
-	}
-);
-define('ftheking/components/goalpost',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('goalpost', {
-			tick: function(delta){
-				var nearby = this.state.findEntities(this.get('xform.tx'),
-														this.get('xform.ty'),
-														12);
-				var pcs = nearby.filter(function(e){return e.tags.indexOf('pc')>=0});
-				
-				if (pcs.length>0){
-					this.state.winGame();
-				}
-			},
-		});		
-	}
-);
-define('ftheking/components/door',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('door', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this._open = false;
-			},
-			register: function(state){
-				this._super(state);
-				this.map = state.map;
-				this.update();
-				this.on('interact', this.toggle);
-			},
-			deregister: function(state){
-				this.off('interact', this.toggle);
-				this._super(state);
-			},
-			update: function(){
-				var tile = this.map.getTileAtPos(this.get('xform.tx'),this.get('xform.ty'));
-				tile.data.passable = this._open;
-				var tile = this.map.getTileAtPos(this.get('xform.tx'),this.get('xform.ty')-32);
-				tile.data.passable = this._open;
-				//var tile = this.map.getTileAtPos(this.get('xform.tx'),this.get('xform.ty')-64);
-				//tile.data.passable = this._open;
-			},
-			toggle: function(){
-				if (this._open){
-					this._open = false;
-					this.entity.trigger('sprite.show');
-				} else {
-					this._open = true;
-					this.entity.trigger('sprite.hide');
-				}
-				this.update();
-			}
-		});		
-	}
-);
-define('ftheking/components/interact',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		var InteractComponent = Component.add('interact', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this._targets = data.targets;
-				this._proxy = data.proxy;
-			},
-			register: function(state){
-				this._super(state);
-				if (this._targets){
-					this._proxies = [];
-					for (var i = this._targets.length - 1; i >= 0; i--) {
-						var target = this._targets[i];
-						if (target[0]==0 && target[1]==0){
-							continue;
-						}
-						var proto = {
-							xform: {
-								tx: this.get('xform.tx') + (target[0]*32),
-								ty: this.get('xform.ty') + (target[1]*32),
-							},
-							interact: {
-								proxy: this.entity,
-							},
-							highlight: {
-								radius: 24
-							}
-						}
-						var proxy = state.factory.create('trigger', proto);
-						state.addEntity(proxy)
-						this._proxies.push(proxy);
-					};
-				}
-				if (this._proxy){
-					this.on('interact', this.interact);
-				}
-			},
-			deregister: function(state){
-				this._super(state);
-				if (this._proxy){
-					this.off('interact', this.interact);
-				}
-			},
-			interact: function(entity){
-				this._proxy.trigger('interact', entity)
-			}
-		});
-
-		var InteractControlComponent = Component.add('interact.control', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this._current = null;
-			},
-			register: function(state){
-				this._super(state);
-				this.on('interact', this.interact);
-			},
-			deregister: function(state){
-				this._super(state);
-				this.off('interact', this.interact);
-			},
-			interact: function(){
-				if (this._current){
-					this._current.trigger('interact', this.entity);
-				}
-			},
-			tick: function(delta){
-				var tx = this.get('xform.tx');
-				var ty = this.get('xform.ty');
-				var targets = this.state.findEntities(tx, ty, 32).filter(function(e){
-					return e.interact!=undefined && e.interact.enabled;
-				});
-				targets.sort(function(a,b){return b._findDist-a._findDist});
-				if (this._current!=targets[0]){
-					if (this._current){
-						this._current.trigger('highlight.off');
-						this._current = null;
-					}
-					this._current=targets[0];
-					if (this._current){
-						this._current.trigger('highlight.on');
-					}
-				}
-			}
-		});
-	}
-);
-define('ftheking/components/highlight',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-
-		var HighlightComponent = Component.add('highlight', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this._radius = data.radius || 16;
-				this.indicater = new PIXI.Graphics();
-				this.indicater.alpha = 0.65;
-				this.indicater.beginFill('0x00FFF0');
-				this.indicater.drawCircle(0,0, this._radius);
-				this.indicater.endFill();
-				this._active = false;
-			},
-			register: function(state){
-				this._super(state);
-				this.on('highlight.on', this.turnOn);
-				this.on('highlight.off', this.turnOff);
-			},
-			deregister: function(state){
-				this._super(state);
-				this.off('highlight.on', this.turnOn);
-				this.off('highlight.off', this.turnOff);
-				this.turnOff();
-			},
-			turnOn: function(){
-				this._active = true;
-				this.state.containers.underfoot.addChild(this.indicater);
-			},
-			turnOff: function(){
-				this._active = false;
-				if (this.state.containers.underfoot.children.indexOf(this.indicater)){
-					this.state.containers.underfoot.removeChild(this.indicater);
-				}
-			},
-			render: function(){
-				//if (this._active){
-					this.indicater.position.x = this.get('xform.tx');
-					this.indicater.position.y = this.get('xform.ty');
-				//}
-			}
-		});
-	}
-);
-define('ftheking/components/container',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('container', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this._open = false;
-			},
-			register: function(state){
-				this._super(state);
-				this.on('interact', this.toggle);
-			},
-			deregister: function(state){
-				this.off('interact', this.toggle);
-				this._super(state);
-			},
-			toggle: function(entity){
-				this.set('sprite.frame', 1);
-				this.state.swapInventory(entity, this.entity);
-			}
-		});		
-	}
-);
-define('ftheking/components/computer',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('computer', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this._open = false;
-			},
-			register: function(state){
-				this._super(state);
-				this.on('interact', this.toggle);
-			},
-			deregister: function(state){
-				this.off('interact', this.toggle);
-				this._super(state);
-			},
-			toggle: function(){
-				this.entity.trigger('anim.set', 'on');
-				this.on('anim.done', function(){
-					this.state.startCutscene();
-					cutsceneState = this.state.game.getState('cutscene');
-					cutsceneState.setDialog('Computer: 00101100110100110101001');
-					this.entity.trigger('anim.set', 'off');
-				}.bind(this), { once: true })
-			}
-		});		
-	}
-);
-define('ftheking/components/anim',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('anim', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this._tracks = data.tracks;
-				this._currentTrack = null
-				this._index=0;
-				this._animTimeout = 0;
-			},
-			register: function(state){
-				this._super(state);
-				this.on('anim.set', this.setAnim);
-			},
-			deregister: function(state){
-				this._super(state);
-				this.off('anim.set', this.setAnim);
-			},
-			setAnim: function(anim){
-				this._currentTrack = this._tracks[anim];
-			},
-			tick: function(delta){
-				if (this._currentTrack!=null){
-					this._animTimeout-=delta;
-					if (this._animTimeout<=0){
-						this._animTimeout=1/30;
-						this._index++;
-						if (this._index>=this._currentTrack.frames.length){
-							if (this._currentTrack.once){
-								this._index=0;
-								this._currentTrack = null;
-								this.entity.trigger('anim.done');
-								return;
-							} else {
-								this._index = 0;
-							}
-						}
-						this.set('sprite.frame', this._currentTrack.frames[this._index]);
-					}
-				}
-				
-			}
-		});		
-	}
-);
-define('ftheking/components/item',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('item', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this.set('item.item', data.item);
-			},
-			register: function(state){
-				this._super(state);
-				this.on('interact', this.interact);
-			},
-			deregister: function(state){
-				this._super(state);
-				this.off('interact', this.interact);
-			},
-			interact: function(e){
-				if (e.inventory){
-					e.inventory.addItem(this.get('item.item'));
-				}
-				this.state.removeEntity(this.entity);
-			},
-			tick: function(delta){
-
-			}
-		});		
-	}
-);
-define('ftheking/components/equipable',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('equipable', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this._equiped = null;
-			},
-			register: function(state){
-				this._super(state);
-				this.on('item.equip', this.itemEquip)
-				this.on('item.use', this.itemUse)
-			},
-			deregister: function(state){
-				this._super(state);
-				this.off('item.equip', this.itemEquip);
-				this.off('item.use', this.itemUse)
-			},
-			itemEquip: function(item){
-				this._equiped = item;
-				this.entity.trigger('item.equiped', this._equiped);
-			},
-			itemUse: function(){
-				if (this._equiped){
-					inv = this.entity.inventory.items;
-					if (inv[this._equiped]>0){
-						inv[this._equiped]--;
-						//TODO: Replace with real item used code.
-						var bomb = this.state.factory.create(this._equiped, {
-							xform: {
-								tx: this.get('xform.tx'),
-								ty: this.get('xform.ty')
-							}
-						})
-						this.state.addEntity(bomb);
-						if (inv[this._equiped]<=0){
-							this.itemEquip(null);
-						}
-					}
-				}
-			}
-
-		});		
-	}
-);
-define('ftheking/components/switch',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('switch', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this.set('switch.on', data.on || false);
-				this.set('switch.entity', data.entity);
-			},
-			register: function(state){
-				this._super(state);
-				this.on('interact', this.interact);
-			},
-			deregister: function(state){
-				this._super(state);
-				this.off('interact', this.interact);
-			},
-			interact: function(){
-				this.set('switch.on', !this.get('switch.on'));
-				this.update();
-				var entityName = this.get('switch.entity');
-				if (entityName){
-					var entity = this.state.getEntity(entityName);
-					if (entity){
-						entity.trigger('interact');
-					}
-				}
-			},
-			update: function(){
-				this.set('sprite.frame', this.get('switch.on') ? 1 : 0);
-			}
-		});		
-	}
-);
-define('ftheking/components/persist',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('persist', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this._attrs = data.attrs;
-				this._global = Boolean(data.global);
-			},
-			register: function(state){
-				this._super(state);
-				this.on('persist', this.persist);
-			},
-			deregister: function(state){
-				this._super(state);
-				this.off('persist', this.persist);
-			},
-			persist: function(){
-				var mapName = this.state.game.data.map;
-				var gameData = this.state.game.data.persist;
-				var persistData = {};
-				for (var i = this._attrs.length - 1; i >= 0; i--) {
-					var attr = this._attrs[i];
-					persistData[attr] = this.get(attr);
-				}
-				if (this._global){
-					gameData.entities[this.entity.name] = persistData;
-				} else {
-					gameData.maps[mapName].entities[this.entity.name] = persistData;
-				}
-			}
-		});		
-	}
-);
-define('ftheking/factory',[
-	'sge',
-	'./entity',
-	'./components/sprite',
-	'./components/rpgcontrols',
-	'./components/chara',
-	'./components/ai',
-	'./components/physics',
-	'./components/sound',
-	'./components/bomb',
-	'./components/emote',
-	'./components/guardpost',
-	'./components/goalpost',
-	'./components/door',
-	'./components/interact',
-	'./components/highlight',
-	'./components/container',
-	'./components/computer',
-	'./components/anim',
-	'./components/item',
-	'./components/equipable',
-	'./components/switch',
-	'./components/persist'
-	],function(sge, Entity){
-		var deepExtend = function(destination, source) {
-          for (var property in source) {
-            if (source[property] && source[property].constructor &&
-             source[property].constructor === Object) {
-              destination[property] = destination[property] || {};
-              arguments.callee(destination[property], source[property]);
-            } else {
-              destination[property] = source[property];
-            }
-          }
-          return destination;
-        };
-
-		var _Factory = sge.Class.extend({
-			init: function(){
-				this.blueprints = {}
-			},
-			load: function(data){
-				for (var prop in data) {
-			      // important check that this is objects own property 
-			      // not from prototype prop inherited
-			      if(data.hasOwnProperty(prop)){
-			        this.blueprints[prop] = data[prop];
-			      }
-			   }
-			},
-			has: function(typ){
-				return (this.blueprints[typ]!==undefined);
-			},
-			create: function(typ, data){
-				var tags = [];
-				if (data===undefined){
-					data = {}
-				}
-
-				if (this.blueprints[typ]==undefined){
-					return;
-				}
-
-				var entityData = deepExtend({}, this.blueprints[typ]);
-
-				if (data.meta!==undefined){
-					if (data.meta.tag){
-						tags = tags.concat(data.meta.tag);
-					}
-				}
-				if (entityData.meta!==undefined){
-					if (entityData.meta.tagsBase){
-						tags = tags.concat(entityData.meta.tagsBase);
-					}
-
-					if (entityData.meta.inherit!==undefined){
-						var inherit = entityData.meta.inherit;
-						var bases = [typ, inherit];
-						while (inherit!=null){
-							baseData = this.blueprints[inherit];
-							inherit = null;
-							if (baseData.meta!==undefined){
-								if (baseData.meta.tags){
-									tags = tags.concat(baseData.meta.tags);
-								}
-								if (baseData.meta.inherit){
-									inherit = baseData.meta.inherit;
-									bases.push(inherit);
-								}
-							}
-						}
-						entityData = {};
-						bases.reverse();
-						while (bases.length){
-							base = bases.shift();
-							entityData = deepExtend(entityData, this.blueprints[base]);
-						}
-					}
-
-				}
-				
-				entityData = deepExtend(entityData, data);
-				
-
-				if (entityData['meta']!==undefined){
-					delete entityData['meta'];
-				}
-				var entity = Entity.Factory(entityData);
-				entity.tags = entity.tags.concat(tags);
-				return entity;
-			}
-		})
-		Factory = new _Factory();
-		return Factory;
-});
-define('ftheking/social',[
-	'sge',
-	], function(sge){
-		var SocialSystem = sge.Class.extend({
-			init: function(){
-				this._socialMap = [];
-			},
-			setMap : function(map){
-				this.map = map;
-				/*
-				this.map.getTiles().forEach(function(t){
-						return t.data.socialValue = t.layers.base==16 ? 1 : 0;
-				});
-				*/
-				for (var i = this.map.width - 1; i >= 0; i--) {
-					this.map.getTile(i,0).data.socialValue=-1;
-					this.map.getTile(i,0).data.socialVector = [0, -1];
-					this.map.getTile(i,this.map.height-1).data.socialValue=-1;
-					this.map.getTile(i,0).data.socialVector = [0, 1];
-				};
-				for (var i=0; i<2;i++){
-					this.diffuseMap();
-				}
-				this.calcGradient();
-			},
-			diffuseMap: function(){
-				var origMap = this.map.getTiles().map(function(x){return x.data.socialValue});
-				for (var x = 0; x<this.map.width; x++){
-					for (var y=0; y<this.map.height; y++){
-
-						var value = 0;
-						var count = 0;
-
-						for (var j=-1;j<2;j++){
-							for(var k=-1;k<2;k++){
-								var amt = this.getData(x+j,y+k, origMap);
-								if (amt!=undefined){
-									value += amt;
-									count++;
-								}
-							}
-						}
-						this.map.getTile(x, y).data.socialValue = Math.max((value/count),this.getData(x,y, origMap));
-					}
-				}
-			},
-			calcGradient : function(){
-				for (var x = 1; x<this.map.width-1; x++){
-
-					for (var y=1; y<this.map.height-1; y++){
-						
-						var ax = x-1;
-						var bx = x+1;
-
-						var amtAx = this.map.getTile(ax,y).data.socialValue;
-						var amtBx = this.map.getTile(bx,y).data.socialValue;
-						
-						var dx = (amtBx - amtAx) / 2;
-
-						var ay = y-1;
-						var by = y+1;
-
-						var amtAy = this.map.getTile(x,ay).data.socialValue;
-						var amtBy = this.map.getTile(x,by).data.socialValue;
-						
-						var dy = (amtBy - amtAy) / 2;
-
-						var dist = Math.sqrt((dx*dx)+(dy*dy));
-						if (dist==0){
-							this.map.getTile(x,y).data.socialVector=[0,0];
-						} else {
-							this.map.getTile(x,y).data.socialVector=[dx/dist,dy/dist];
-						}
-					}
-				}
-			},
-			getIndex : function(x, y){
-	            var index = (y * this.map.width) + x;
-	            if (x > this.map.width-1 || x < 0){
-	                return null;
-	            }
-	            if (y > this.map.height-1 || y < 0){
-	                return null;
-	            }
-	            return index;
-	        },
-	        getData : function(x, y, arr){
-	            return arr[this.getIndex(x, y)];
-	        },
-	        getTileAtPos : function(x, y){
-	        	return this.getTile(Math.floor(x / this.tileSize), Math.floor(y / this.tileSize))
-	        },
-		})
-
-		return SocialSystem;
-	}
-);
 define('ftheking/hud',[
 	'sge'
 	], function(sge){
@@ -26068,6 +25572,7 @@ define('ftheking/subzerostate',[
 			initGame: function(){
 				var pc = this.getEntity('pc');
 				this.pc = pc;
+				/*
 				if (this.pc){
 					this.hud.setPC(pc);
 					if (this.game.data.spawn){
@@ -26076,6 +25581,8 @@ define('ftheking/subzerostate',[
 						this.pc.set('xform.ty', spawnEntity.get('xform.ty'));
 					}
 				}
+				*/
+				console.log(this.pc.get('xform.tx'),this.pc.get('xform.ty'))
 
 				var names = Object.keys(this.game.data.persist.entities);
 				for (var i = names.length - 1; i >= 0; i--) {

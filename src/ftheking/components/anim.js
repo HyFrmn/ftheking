@@ -32,6 +32,7 @@ define([
 								this._index=0;
 								this._currentTrack = null;
 								this.entity.trigger('anim.done');
+								this.setAnim(this._defaultAnim || 'idle');
 								return;
 							} else {
 								this._index = 0;
