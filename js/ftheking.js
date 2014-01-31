@@ -24832,6 +24832,18 @@ define('ftheking/components/goal',[
 		});		
 	}
 );
+define('ftheking/components/enemy',[
+	'sge',
+	'../component'
+	], function(sge, Component){
+		Component.add('enemy', {
+			init: function(entity, data){
+				this._super(entity, data);
+				this.set('movement.vx', -1)
+			}
+		});		
+	}
+);
 define('ftheking/factory',[
 	'sge',
 	'./entity',
@@ -24844,7 +24856,8 @@ define('ftheking/factory',[
 	'./components/interact',
 	'./components/anim',
 	'./components/persist',
-	'./components/goal'
+	'./components/goal',
+	'./components/enemy'
 	],function(sge, Entity){
 		var deepExtend = function(destination, source) {
           for (var property in source) {
