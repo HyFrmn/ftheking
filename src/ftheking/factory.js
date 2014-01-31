@@ -9,10 +9,8 @@ define([
 	'./components/sound',
 	'./components/interact',
 	'./components/anim',
-	'./components/item',
-	'./components/equipable',
-	'./components/switch',
-	'./components/persist'
+	'./components/persist',
+	'./components/goal'
 	],function(sge, Entity){
 		var deepExtend = function(destination, source) {
           for (var property in source) {

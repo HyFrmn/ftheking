@@ -19,7 +19,7 @@
             "height": 120,
             "offsety" : -60
         },
-        "moving" : {
+        "chara" : {
             
         }
     },
@@ -80,5 +80,14 @@
         "physics" : {
             "type" : 2
         }
+    },
+    "goal" : {
+        "physics" : {
+            "width" : 35,
+            "height": 120,
+            "offsety" : -60,
+            "type" : 2
+        },
+        "goal": {}
     }
 }

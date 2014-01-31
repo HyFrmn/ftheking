@@ -21,7 +21,7 @@ define([
 				this._unspawnedEntities={}
 
 
-				this.stage = new PIXI.Stage(0xFFFFFF);
+				this.stage = new PIXI.Stage(0xD5F5F3);
 				this.container = new PIXI.DisplayObjectContainer();
 				this._scale = 2;
 				//if (navigator.isCocoonJS){
@@ -255,6 +255,7 @@ define([
 					idx = tile.data.entities.indexOf(e);
 					tile.data.entities.splice(idx, 1);
 				}
+				e.id = null;
 				delete this._entities[id];
 			},
 
@@ -302,7 +303,7 @@ define([
 								dx = (e.get('xform.tx')-tx);
 								dy = (e.get('xform.ty')-ty);
 								e._findDist = (dx*dx)+(dy*dy);
-								return ((dx*dx)+(dy*dy)<=sqrRad);
+								return ((dx*dx)+(dy*dy)<=sqrRad && e.id!=null);
 							});
 							if (es){
 								entities = entities.concat(es);

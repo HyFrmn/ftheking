@@ -16,7 +16,7 @@ define([
 				}
 
 				if (this.input.isPressed('X')){
-					this.entity.attack.attack();
+					this.entity.attack.attackStart();	
 				}
 
 				if (this.input.isPressed('enter')){

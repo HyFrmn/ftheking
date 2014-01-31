@@ -5,7 +5,7 @@ define([
     	var WinState = sge.GameState.extend({
                 init: function(game){
                     this._super(game);
-                    this.stage = new PIXI.Stage(0x66FF99);
+                    this.stage = new PIXI.Stage(0x000000);
                     this.container = new PIXI.DisplayObjectContainer();
                     this._scale = 1;
                     this.container.scale.x= window.innerWidth / game.width;
@@ -40,7 +40,7 @@ define([
         var LoseState = sge.GameState.extend({
                 init: function(game){
                     this._super(game);
-                    this.stage = new PIXI.Stage(0x66FF99);
+                    this.stage = new PIXI.Stage(0x000000);
                     this.container = new PIXI.DisplayObjectContainer();
                     this._scale = 1;
                     this.container.scale.x= window.innerWidth / game.width;

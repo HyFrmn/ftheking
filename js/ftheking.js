@@ -22933,6 +22933,13 @@ define('ftheking/tilemap',[
 					for (var y=chunkStartY; y<chunkEndY; y++){
 						var tile = this.getTile(x, y);
 						if (tile){
+							var name='background'
+							if (tile.layers[name]!=undefined){
+								var sprite = new PIXI.Sprite(this._tileTextures[tile.layers[name]]);
+								sprite.position.x = (x*this.tileSize) - startX;
+								sprite.position.y = (y*this.tileSize) - startY;
+								chunk.addChild(sprite);
+							}
 							if (tile.layers.base!==undefined){
 								if (tile.layers.base!=null){
 									var sprite = new PIXI.Sprite(this._tileTextures[tile.layers.base]);
@@ -22940,19 +22947,6 @@ define('ftheking/tilemap',[
 									sprite.position.y = (y*this.tileSize) - startY;
 									chunk.addChild(sprite);
 								}
-							}
-							name='layer0'
-							if (tile.layers[name]!==undefined){
-								var sprite = new PIXI.Sprite(this._tileTextures[tile.layers[name]]);
-								sprite.position.x = (x*this.tileSize) - startX;
-								sprite.position.y = (y*this.tileSize) - startY;
-								chunk.addChild(sprite);
-							} else {
-								this.maskBase.drawRect(x*this.tileSize,y*this.tileSize,this.tileSize,this.tileSize);
-							}
-
-							if (!tile.layers.canopy){
-								this.maskCanopy.drawRect(x*this.tileSize,y*this.tileSize,this.tileSize,this.tileSize);
 							}
 						}
 					}
@@ -23089,8 +23083,8 @@ define('ftheking/tiledlevel',[
 								
 
 							}.bind(this));
-							console.log({xform: {tx: entityData.x+(map.tileSize/2), ty: entityData.y-map.tileSize+(map.tileSize/2)}})
-							eData = deepExtend(eData, {xform: {tx: entityData.x+(map.tileSize/2), ty: entityData.y-map.tileSize+(map.tileSize/2)}}); //-32 for tiled hack.
+							console.log({xform: {tx: entityData.x+(entityData.width/2), ty: entityData.y+entityData.height-1}})
+							eData = deepExtend(eData, {xform: {tx: entityData.x+(entityData.width/2), ty: entityData.y+entityData.height-1}}); //-32 for tiled hack.
 							
 							var spawn = true;
 							if (eData.meta!==undefined){
@@ -24197,7 +24191,7 @@ define('ftheking/physics',[
 					ty = e.get('xform.ty');
 					
 					aRect = new sat.Box(new sat.Vector(tx+e.get('physics.offsetx'), ty+e.get('physics.offsety')), e.get('physics.width'), e.get('physics.height'));
-					potential = this.state.findEntities(tx,ty, 32).filter(function(q){return q.physics!=null && q!=e});
+					potential = this.state.findEntities(tx,ty, 280).filter(function(q){return q.physics!=null && q!=e});
 					for (var k = potential.length - 1; k >= 0; k--) {
 						var hash = this._collisionHash(e, potential[k])
 						if (testHashes.indexOf(hash)<0){
@@ -24269,6 +24263,7 @@ define('ftheking/physics',[
 										if (horzTile){
 										    if (!horzTile.data.passable){
 											    horzMove=false;
+											    entity.set('physics.vx', 0);
 										    }
 										}
 									}
@@ -24280,6 +24275,7 @@ define('ftheking/physics',[
 											    entity.set('physics.vy', 0);
 											    if (vy>0){
 											    	entity.physics.grounded = true;
+											    	entity.set('physics.vx', entity.get('physics.vx')*0.9)
 											    }
 										    }
 										}
@@ -24416,7 +24412,7 @@ define('ftheking/components/rpgcontrols',[
 				}
 
 				if (this.input.isPressed('X')){
-					this.entity.attack.attack();
+					this.entity.attack.attackStart();	
 				}
 
 				if (this.input.isPressed('enter')){
@@ -24428,11 +24424,13 @@ define('ftheking/components/rpgcontrols',[
 						this.set('physics.vy', -450);
 					}
 				}
+				/*
 				if (this.get('movement.vx')!=0 && this.entity.physics.grounded){
-					this.entity.anim.setAnim('walk')
+					this.entity.anim._defaultAnim = 'walk'
 				} else {
-					this.entity.anim.setAnim('idle')
+					this.entity.anim._defaultAnim = 'idle'
 				}
+				*/
 				this.set('physics.vx', this.get('movement.speed') * this.get('movement.vx'));
 			},
 			register: function(state){
@@ -24446,29 +24444,22 @@ define('ftheking/components/chara',[
 	'sge',
 	'../component'
 	], function(sge, Component){
-		var CharaComponent = Component.add('moving', {
+		var CharaComponent = Component.add('chara', {
 			init: function(entity, data){
 				this._super(entity, data);
 				this.set('sprite.frame', 0);
 				this.set('movement.vx', 0);
 				this.set('movement.vy', 0);
 				this.set('movement.speed', 140);
-				this._anim = null;
-				this._animTimeout = 0;
-				this._walkcycleFrames = {
-	                "walk_down" : [19,20,21,22,23,24,25,26],
-	                "walk_up" : [1,2,3,4,5,6,7,8],
-	                "walk_left" : [10,11,12,13,14,15,16,17],
-	                "walk_right" : [28,29,30,31,32,33,34,35],
-	                "stand_down" : [18],
-	                "stand_up" : [0],
-	                "stand_right" : [27],
-	                "stand_left" : [9]
-	            }
-	            this.setAnim('stand_' + this.get('chara.dir'));
+				this.set('movement.dir', 1);
+				this.set('chara.health', 2);
+				this._state = 'idle';
 			},
-			setAnim: function(anim){
-				//this.entity.trigger('anim.set', anim);
+			setState: function(state){
+				this._state = state;
+			},
+			resetState : function(){
+				this._state = 'idle'
 			},
 			setDirection: function(dir){
 				if (this.get('chara.dir')!=dir){
@@ -24479,10 +24470,23 @@ define('ftheking/components/chara',[
 				
 				if (this.get('movement.vx')<0){
 					this.set('sprite.scalex', -4);
+					this.set('movement.dir', -1);
+
 				}
 
 				if (this.get('movement.vx')>0){
 					this.set('sprite.scalex', 4);
+					this.set('movement.dir', 1);
+				}
+
+				if (this._state=='attack'){
+
+				} else {
+					if (this.get('movement.vx')!=0 && this.entity.physics.grounded){
+						this.entity.anim.setAnim('walk');
+					} else {
+						this.entity.anim.setAnim('idle');
+					}
 				}
 				/*
 				if (this.get('movement.vy')<0){
@@ -24512,23 +24516,42 @@ define('ftheking/components/attack',[
 			init: function(entity, data){
 				this._super(entity, data);
 			},
-			attack: function(){
+			attackStart: function(){
+				this.entity.chara.setState('attack');
 				this.entity.anim.setAnim('attack');
+				this.on('anim.done', this.attackEnd, {once: true})
 				var entities = this.state.findEntities(this.get('xform.tx'), this.get('xform.ty'), 140).filter(function(e){
 					return e!=this.entity;
 				}.bind(this));
 				var response = new sat.Response();
-				var hitbox = new sat.Box(new sat.Vector(this.get('xform.tx')-70,this.get('xform.ty')-140), 140, 140);
+				var hitbox = new sat.Box(new sat.Vector(this.get('xform.tx')-140,this.get('xform.ty')-105), 140, 140);
+				if (this.get('movement.dir')>0){
+					hitbox = new sat.Box(new sat.Vector(this.get('xform.tx'),this.get('xform.ty')-105), 140, 140);
+				}
+				
 				for (var i = entities.length - 1; i >= 0; i--) {
 					var ep = entities[i];
 					var bRect = new sat.Box(new sat.Vector(ep.get('xform.tx')+ep.get('physics.offsetx'),ep.get('xform.ty')+ep.get('physics.offsety')), ep.get('physics.width'), ep.get('physics.height'));
 					collided = sat.testPolygonPolygon(hitbox.toPolygon(), bRect.toPolygon(), response);
 					if (collided){
-						this.state.removeEntity(ep);
+						if (this.get('movement.dir')>0){
+							ep.set('physics.vx', 100)
+						} else {
+							ep.set('physics.vx', -100)
+						}
+						ep.set('physics.vy', -100)
+						ep.set('chara.health', ep.get('chara.health')-1);
+						console.log('Health',ep.get('chara.health') )
+						if (ep.get('chara.health')<=0){
+							this.state.removeEntity(ep);
+						}
 						response.clear();
 					}
 
 				};
+			},
+			attackEnd: function(){
+				this.entity.chara.resetState();
 			}
 		});		
 	}
@@ -24743,116 +24766,6 @@ define('ftheking/components/anim',[
 		});		
 	}
 );
-define('ftheking/components/item',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('item', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this.set('item.item', data.item);
-			},
-			register: function(state){
-				this._super(state);
-				this.on('interact', this.interact);
-			},
-			deregister: function(state){
-				this._super(state);
-				this.off('interact', this.interact);
-			},
-			interact: function(e){
-				if (e.inventory){
-					e.inventory.addItem(this.get('item.item'));
-				}
-				this.state.removeEntity(this.entity);
-			},
-			tick: function(delta){
-
-			}
-		});		
-	}
-);
-define('ftheking/components/equipable',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('equipable', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this._equiped = null;
-			},
-			register: function(state){
-				this._super(state);
-				this.on('item.equip', this.itemEquip)
-				this.on('item.use', this.itemUse)
-			},
-			deregister: function(state){
-				this._super(state);
-				this.off('item.equip', this.itemEquip);
-				this.off('item.use', this.itemUse)
-			},
-			itemEquip: function(item){
-				this._equiped = item;
-				this.entity.trigger('item.equiped', this._equiped);
-			},
-			itemUse: function(){
-				if (this._equiped){
-					inv = this.entity.inventory.items;
-					if (inv[this._equiped]>0){
-						inv[this._equiped]--;
-						//TODO: Replace with real item used code.
-						var bomb = this.state.factory.create(this._equiped, {
-							xform: {
-								tx: this.get('xform.tx'),
-								ty: this.get('xform.ty')
-							}
-						})
-						this.state.addEntity(bomb);
-						if (inv[this._equiped]<=0){
-							this.itemEquip(null);
-						}
-					}
-				}
-			}
-
-		});		
-	}
-);
-define('ftheking/components/switch',[
-	'sge',
-	'../component'
-	], function(sge, Component){
-		Component.add('switch', {
-			init: function(entity, data){
-				this._super(entity, data);
-				this.set('switch.on', data.on || false);
-				this.set('switch.entity', data.entity);
-			},
-			register: function(state){
-				this._super(state);
-				this.on('interact', this.interact);
-			},
-			deregister: function(state){
-				this._super(state);
-				this.off('interact', this.interact);
-			},
-			interact: function(){
-				this.set('switch.on', !this.get('switch.on'));
-				this.update();
-				var entityName = this.get('switch.entity');
-				if (entityName){
-					var entity = this.state.getEntity(entityName);
-					if (entity){
-						entity.trigger('interact');
-					}
-				}
-			},
-			update: function(){
-				this.set('sprite.frame', this.get('switch.on') ? 1 : 0);
-			}
-		});		
-	}
-);
 define('ftheking/components/persist',[
 	'sge',
 	'../component'
@@ -24888,6 +24801,29 @@ define('ftheking/components/persist',[
 		});		
 	}
 );
+define('ftheking/components/goal',[
+	'sge',
+	'../component'
+	], function(sge, Component){
+		Component.add('goal', {
+			init: function(entity, data){
+				this._super(entity, data);
+			},
+			register: function(state){
+				this._super(state);
+				this.on('contact.start',  this.contact);
+			},
+			deregister: function(){
+				this.on('contact.start',  this.contact);
+			},
+			contact: function(e){
+				if (e==this.state.pc){
+					this.state.winGame();
+				}
+			}
+		});		
+	}
+);
 define('ftheking/factory',[
 	'sge',
 	'./entity',
@@ -24899,10 +24835,8 @@ define('ftheking/factory',[
 	'./components/sound',
 	'./components/interact',
 	'./components/anim',
-	'./components/item',
-	'./components/equipable',
-	'./components/switch',
-	'./components/persist'
+	'./components/persist',
+	'./components/goal'
 	],function(sge, Entity){
 		var deepExtend = function(destination, source) {
           for (var property in source) {
@@ -25483,7 +25417,7 @@ define('ftheking/subzerostate',[
 				this._unspawnedEntities={}
 
 
-				this.stage = new PIXI.Stage(0xFFFFFF);
+				this.stage = new PIXI.Stage(0xD5F5F3);
 				this.container = new PIXI.DisplayObjectContainer();
 				this._scale = 2;
 				//if (navigator.isCocoonJS){
@@ -25717,6 +25651,7 @@ define('ftheking/subzerostate',[
 					idx = tile.data.entities.indexOf(e);
 					tile.data.entities.splice(idx, 1);
 				}
+				e.id = null;
 				delete this._entities[id];
 			},
 
@@ -25764,7 +25699,7 @@ define('ftheking/subzerostate',[
 								dx = (e.get('xform.tx')-tx);
 								dy = (e.get('xform.ty')-ty);
 								e._findDist = (dx*dx)+(dy*dy);
-								return ((dx*dx)+(dy*dy)<=sqrRad);
+								return ((dx*dx)+(dy*dy)<=sqrRad && e.id!=null);
 							});
 							if (es){
 								entities = entities.concat(es);
@@ -25813,7 +25748,7 @@ define('ftheking/paused',[
     	PausedState = sge.GameState.extend({
             init: function(game){
                 this._super(game);
-                this.stage = new PIXI.Stage(0x66FF99);
+                this.stage = new PIXI.Stage(0x000000);
                 this.container = new PIXI.DisplayObjectContainer();
                 this._scale = 1;
                 this.container.scale.x= window.innerWidth / game.width;
@@ -26235,7 +26170,7 @@ define('ftheking/states',[
     	var WinState = sge.GameState.extend({
                 init: function(game){
                     this._super(game);
-                    this.stage = new PIXI.Stage(0x66FF99);
+                    this.stage = new PIXI.Stage(0x000000);
                     this.container = new PIXI.DisplayObjectContainer();
                     this._scale = 1;
                     this.container.scale.x= window.innerWidth / game.width;
@@ -26270,7 +26205,7 @@ define('ftheking/states',[
         var LoseState = sge.GameState.extend({
                 init: function(game){
                     this._super(game);
-                    this.stage = new PIXI.Stage(0x66FF99);
+                    this.stage = new PIXI.Stage(0x000000);
                     this.container = new PIXI.DisplayObjectContainer();
                     this._scale = 1;
                     this.container.scale.x= window.innerWidth / game.width;

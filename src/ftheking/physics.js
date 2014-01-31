@@ -35,7 +35,7 @@ define([
 					ty = e.get('xform.ty');
 					
 					aRect = new sat.Box(new sat.Vector(tx+e.get('physics.offsetx'), ty+e.get('physics.offsety')), e.get('physics.width'), e.get('physics.height'));
-					potential = this.state.findEntities(tx,ty, 32).filter(function(q){return q.physics!=null && q!=e});
+					potential = this.state.findEntities(tx,ty, 280).filter(function(q){return q.physics!=null && q!=e});
 					for (var k = potential.length - 1; k >= 0; k--) {
 						var hash = this._collisionHash(e, potential[k])
 						if (testHashes.indexOf(hash)<0){
@@ -110,6 +110,7 @@ define([
 										if (horzTile){
 										    if (!horzTile.data.passable){
 											    horzMove=false;
+											    entity.set('physics.vx', 0);
 										    }
 										}
 									}
@@ -121,6 +122,7 @@ define([
 											    entity.set('physics.vy', 0);
 											    if (vy>0){
 											    	entity.physics.grounded = true;
+											    	entity.set('physics.vx', entity.get('physics.vx')*0.9)
 											    }
 										    }
 										}

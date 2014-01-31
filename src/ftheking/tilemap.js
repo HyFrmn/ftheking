@@ -129,6 +129,13 @@ define([
 					for (var y=chunkStartY; y<chunkEndY; y++){
 						var tile = this.getTile(x, y);
 						if (tile){
+							var name='background'
+							if (tile.layers[name]!=undefined){
+								var sprite = new PIXI.Sprite(this._tileTextures[tile.layers[name]]);
+								sprite.position.x = (x*this.tileSize) - startX;
+								sprite.position.y = (y*this.tileSize) - startY;
+								chunk.addChild(sprite);
+							}
 							if (tile.layers.base!==undefined){
 								if (tile.layers.base!=null){
 									var sprite = new PIXI.Sprite(this._tileTextures[tile.layers.base]);
@@ -136,19 +143,6 @@ define([
 									sprite.position.y = (y*this.tileSize) - startY;
 									chunk.addChild(sprite);
 								}
-							}
-							name='layer0'
-							if (tile.layers[name]!==undefined){
-								var sprite = new PIXI.Sprite(this._tileTextures[tile.layers[name]]);
-								sprite.position.x = (x*this.tileSize) - startX;
-								sprite.position.y = (y*this.tileSize) - startY;
-								chunk.addChild(sprite);
-							} else {
-								this.maskBase.drawRect(x*this.tileSize,y*this.tileSize,this.tileSize,this.tileSize);
-							}
-
-							if (!tile.layers.canopy){
-								this.maskCanopy.drawRect(x*this.tileSize,y*this.tileSize,this.tileSize,this.tileSize);
 							}
 						}
 					}
