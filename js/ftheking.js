@@ -21565,7 +21565,7 @@ define('sge/game',[
 				this._stateClassMap = {};
 				this._currentState = null;
 				//Don't Support Canvas
-				this.renderer = new PIXI.WebGLRenderer(this.width, this.height, canvas);
+				this.renderer = PIXI.autoDetectRenderer(this.width, this.height, canvas);
 				this.input = new Input(canvas);
 			},
 			start: function(data){
@@ -24726,6 +24726,7 @@ define('ftheking/components/anim',[
 			init: function(entity, data){
 				this._super(entity, data);
 				this._tracks = data.tracks;
+				this._current = null;
 				this._currentTrack = null
 				this._index=0;
 				this._animTimeout = 0;
@@ -24739,18 +24740,25 @@ define('ftheking/components/anim',[
 				this.off('anim.set', this.setAnim);
 			},
 			setAnim: function(anim){
-				this._currentTrack = this._tracks[anim];
+				if (this._current!=anim){
+					this._current=anim;
+					this._currentTrack = this._tracks[anim];
+					this._index = 0;
+					this.set('sprite.frame', this._currentTrack.frames[this._index]);
+					this._animTimeout=1/15;
+				}
+				
 			},
 			tick: function(delta){
 				if (this._currentTrack!=null){
 					this._animTimeout-=delta;
 					if (this._animTimeout<=0){
-						this._animTimeout=1/30;
+						this._animTimeout=1/15;
 						this._index++;
 						if (this._index>=this._currentTrack.frames.length){
 							if (this._currentTrack.once){
 								this._index=0;
-								this._currentTrack = null;
+								this._currentTrack = this._current = null;
 								this.entity.trigger('anim.done');
 								this.setAnim('idle');
 								return;
