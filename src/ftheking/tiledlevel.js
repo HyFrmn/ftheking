@@ -90,6 +90,9 @@ define([
 				if (entityLayer){
 					for (var i = entityLayer.objects.length - 1; i >= 0; i--) {
 						var entityData = entityLayer.objects[i];
+						if (!entityData.visible){
+							continue;
+						}
 						if (state.factory.has(entityData.type)){
 							var eData = {};
 							var decorators = []

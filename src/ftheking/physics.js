@@ -64,9 +64,6 @@ define([
 								// @if DEBUG
 								ep.set('physics.color', '0xAA0000');
 								// @endif
-								
-								
-
 							}
 							
 						}
@@ -77,7 +74,6 @@ define([
 				
 
 				if (vx==undefined){
-					console.log(this.gravity*delta)
 					entity.set('physics.vy', entity.get('physics.vy') + (this.gravity * delta));
 					vx = entity.get('physics.vx') * delta;
 					vy = entity.get('physics.vy') * delta;

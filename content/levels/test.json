@@ -60,7 +60,7 @@
 
                     },
                  "type":"enemy",
-                 "visible":true,
+                 "visible":false,
                  "width":70,
                  "x":1890,
                  "y":490
@@ -73,7 +73,7 @@
 
                     },
                  "type":"enemy",
-                 "visible":true,
+                 "visible":false,
                  "width":70,
                  "x":1400,
                  "y":700
@@ -86,7 +86,7 @@
 
                     },
                  "type":"enemy",
-                 "visible":true,
+                 "visible":false,
                  "width":70,
                  "x":980,
                  "y":770
