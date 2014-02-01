@@ -24162,7 +24162,7 @@ define('ftheking/physics',[
 			init: function(){
 				this.entities = [];
 				this.map = null;
-				this.gravity = 450;
+				this.gravity = 560*2;
 			},
 			tick: function(delta){
 				this.entities.forEach(function(entity){
@@ -24227,9 +24227,11 @@ define('ftheking/physics',[
 				};
 			},
 			move: function(entity, delta, vx, vy){
-				entity.set('physics.vy', entity.get('physics.vy') + this.gravity * delta);
+				
 
 				if (vx==undefined){
+					console.log(this.gravity*delta)
+					entity.set('physics.vy', entity.get('physics.vy') + (this.gravity * delta));
 					vx = entity.get('physics.vx') * delta;
 					vy = entity.get('physics.vy') * delta;
 				}
@@ -24418,12 +24420,6 @@ define('ftheking/components/rpgcontrols',[
 				if (this.input.isPressed('enter')){
 					this.entity.trigger('interact');
 				}
-				
-				if (this.input.isPressed('space')){
-					if (this.entity.physics.grounded){
-						this.set('physics.vy', -450);
-					}
-				}
 				/*
 				if (this.get('movement.vx')!=0 && this.entity.physics.grounded){
 					this.entity.anim._defaultAnim = 'walk'
@@ -24450,7 +24446,7 @@ define('ftheking/components/chara',[
 				this.set('sprite.frame', 0);
 				this.set('movement.vx', 0);
 				this.set('movement.vy', 0);
-				this.set('movement.speed', 140);
+				this.set('movement.speed', data.speed || 140);
 				this.set('movement.dir', 1);
 				this.set('chara.health', 2);
 				this._state = 'idle';
@@ -24880,12 +24876,52 @@ define('ftheking/components/enemy',[
 					var dy = this.get('xform.ty') - pc.get('xform.ty');
 
 					var dist = Math.sqrt((dx*dx) + (dy*dy));
-					if (dist<105 && Math.random()>0.9){
+					if (dist<90 && Math.random()>0.9){
 						this.entity.attack.attackStart();
 					}
 				} 
 			}
 		});		
+	}
+);
+define('ftheking/components/jump',[
+	'sge',
+	'../component'
+	], function(sge, Component){
+		var ControlComponent = Component.add('jump', {
+			init: function(entity, data){
+				this._super(entity, data);
+				this._jumping = false;
+			},
+			tick: function(){
+				if (this.input.isDown('space')){
+					if (this._jumping){
+
+					} else {
+						if (this.entity.physics.grounded){
+							this.set('physics.vy', -900);
+							this._jumping = true;
+						}
+					}
+				} else {
+					if (this._jumping){
+						console.log('Stop Jumping')
+						this._jumping = false;
+						if (this.get('physics.vy')<0){
+							this.set('physics.vy', this.get('physics.vy') * 0.33);
+						}
+					}
+					if (this.entity.physics.grounded){
+						this._jumping = false;
+					}
+				}
+
+			},
+			register: function(state){
+				this._super(state);
+				this.input = state.input;
+			}
+		});
 	}
 );
 define('ftheking/factory',[
@@ -24901,7 +24937,8 @@ define('ftheking/factory',[
 	'./components/anim',
 	'./components/persist',
 	'./components/goal',
-	'./components/enemy'
+	'./components/enemy',
+	'./components/jump'
 	],function(sge, Entity){
 		var deepExtend = function(destination, source) {
           for (var property in source) {
@@ -25484,7 +25521,7 @@ define('ftheking/subzerostate',[
 
 				this.stage = new PIXI.Stage(0xD5F5F3);
 				this.container = new PIXI.DisplayObjectContainer();
-				this._scale = 2;
+				this._scale = 1;
 				//if (navigator.isCocoonJS){
 					this.container.scale.x= window.innerWidth / game.width;
 					this.container.scale.y= window.innerHeight / game.height;
@@ -25631,7 +25668,12 @@ define('ftheking/subzerostate',[
 			},
 			tick: function(delta){
 			    this._super(delta);
-				
+				if (this.pc){
+					if (!this.pc.id){
+						this.pc = null;
+						this.loseGame();
+					}
+				}
 				for (var i = this._entity_ids.length - 1; i >= 0; i--) {
 					var e = this._entities[this._entity_ids[i]];
 					e.tick(delta);
@@ -25860,8 +25902,8 @@ define('ftheking/load',[
             
                 this.text = new PIXI.BitmapText('Loading', {font: '96px 8bit', align: 'center'});
                 this.text.alpha = 1;
-                this.text.position.x = game.renderer.width / 2;
-                this.text.position.y = game.renderer.height / 2;
+                this.text.position.x = game.renderer.width / 2 - (this.text.width/2);
+                this.text.position.y = game.renderer.height / 2 - 96;
                 this.container.addChild(this.text);
 
                 this.stage.addChild(this.container);

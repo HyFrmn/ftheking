@@ -11,7 +11,8 @@ define([
 	'./components/anim',
 	'./components/persist',
 	'./components/goal',
-	'./components/enemy'
+	'./components/enemy',
+	'./components/jump'
 	],function(sge, Entity){
 		var deepExtend = function(destination, source) {
           for (var property in source) {

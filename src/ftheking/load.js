@@ -13,8 +13,8 @@ define([
             
                 this.text = new PIXI.BitmapText('Loading', {font: '96px 8bit', align: 'center'});
                 this.text.alpha = 1;
-                this.text.position.x = game.renderer.width / 2;
-                this.text.position.y = game.renderer.height / 2;
+                this.text.position.x = game.renderer.width / 2 - (this.text.width/2);
+                this.text.position.y = game.renderer.height / 2 - 96;
                 this.container.addChild(this.text);
 
                 this.stage.addChild(this.container);

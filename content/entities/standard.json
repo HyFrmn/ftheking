@@ -47,7 +47,11 @@
                     "frames" : [4,5,6,7]
                 }
             }
-        }
+        },
+        "chara" : {
+            "speed" : 280
+        },
+        "jump" : {}
     },
     "enemy" : {
         "meta" : {

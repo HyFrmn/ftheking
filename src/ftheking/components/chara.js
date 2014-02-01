@@ -8,7 +8,7 @@ define([
 				this.set('sprite.frame', 0);
 				this.set('movement.vx', 0);
 				this.set('movement.vy', 0);
-				this.set('movement.speed', 140);
+				this.set('movement.speed', data.speed || 140);
 				this.set('movement.dir', 1);
 				this.set('chara.health', 2);
 				this._state = 'idle';

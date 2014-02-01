@@ -45,7 +45,7 @@ define([
 					var dy = this.get('xform.ty') - pc.get('xform.ty');
 
 					var dist = Math.sqrt((dx*dx) + (dy*dy));
-					if (dist<105 && Math.random()>0.9){
+					if (dist<90 && Math.random()>0.9){
 						this.entity.attack.attackStart();
 					}
 				} 

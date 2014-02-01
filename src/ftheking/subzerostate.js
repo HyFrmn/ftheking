@@ -23,7 +23,7 @@ define([
 
 				this.stage = new PIXI.Stage(0xD5F5F3);
 				this.container = new PIXI.DisplayObjectContainer();
-				this._scale = 2;
+				this._scale = 1;
 				//if (navigator.isCocoonJS){
 					this.container.scale.x= window.innerWidth / game.width;
 					this.container.scale.y= window.innerHeight / game.height;
@@ -170,7 +170,12 @@ define([
 			},
 			tick: function(delta){
 			    this._super(delta);
-				
+				if (this.pc){
+					if (!this.pc.id){
+						this.pc = null;
+						this.loseGame();
+					}
+				}
 				for (var i = this._entity_ids.length - 1; i >= 0; i--) {
 					var e = this._entities[this._entity_ids[i]];
 					e.tick(delta);

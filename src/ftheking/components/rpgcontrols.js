@@ -22,12 +22,6 @@ define([
 				if (this.input.isPressed('enter')){
 					this.entity.trigger('interact');
 				}
-				
-				if (this.input.isPressed('space')){
-					if (this.entity.physics.grounded){
-						this.set('physics.vy', -450);
-					}
-				}
 				/*
 				if (this.get('movement.vx')!=0 && this.entity.physics.grounded){
 					this.entity.anim._defaultAnim = 'walk'

@@ -6,7 +6,7 @@ define([
 			init: function(){
 				this.entities = [];
 				this.map = null;
-				this.gravity = 450;
+				this.gravity = 560*2;
 			},
 			tick: function(delta){
 				this.entities.forEach(function(entity){
@@ -74,9 +74,11 @@ define([
 				};
 			},
 			move: function(entity, delta, vx, vy){
-				entity.set('physics.vy', entity.get('physics.vy') + this.gravity * delta);
+				
 
 				if (vx==undefined){
+					console.log(this.gravity*delta)
+					entity.set('physics.vy', entity.get('physics.vy') + (this.gravity * delta));
 					vx = entity.get('physics.vx') * delta;
 					vy = entity.get('physics.vy') * delta;
 				}
