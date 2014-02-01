@@ -21,6 +21,7 @@ define([
 						if (this.entity.physics.grounded){
 							this.set('physics.vy', -700);
 							this._jumping = true;
+							this._doubleSet = false;
 						}
 					}
 				} else {
@@ -34,7 +35,7 @@ define([
 					if (this.entity.physics.grounded){
 						this._jumping = false;
 						this._double = false;
-						this._doubleSet = false;
+						this._doubleSet = true;
 					}
 				}
 

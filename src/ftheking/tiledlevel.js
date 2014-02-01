@@ -33,9 +33,10 @@ define([
 						};
 						for (var i = layer.data.length - 1; i >= 0; i--) {
 							var tileIdx = layer.data[i]-1;
-							if (layerName=='terrain'){
+							if (layerName=='base'){
 								map.tiles[i].data.passable = (tileIdx<0)
-							} else {
+							} 
+							if (layerName!='terrain'){
 								if (tileIdx>=0){
 									map.tiles[i].layers[layerName] = tileIdx;
 								} else {

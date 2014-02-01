@@ -16,7 +16,7 @@ define([
 				this._entities = {};
 				this._entity_ids = [];
 				this._entity_name = {};
-
+				this._lives = 3;
 				this._entity_spatial_hash = {}
 				this._unspawnedEntities={}
 
@@ -41,11 +41,11 @@ define([
 				this.container.addChild(this.containers.hud);
 
 				this.curtain = new PIXI.Graphics();
-				/*
+				//*
 				this.curtain.beginFill('0x000000');
 				this.curtain.drawRect(0,0,game.width, game.height);
 				this.curtain.endFill();
-				*/
+				//*/
 				this.container.addChild(this.curtain);
 				
 				this.physics = new Physics();
@@ -110,16 +110,16 @@ define([
 			initGame: function(){
 				var pc = this.getEntity('pc');
 				this.pc = pc;
-				/*
 				if (this.pc){
 					this.hud.setPC(pc);
 					if (this.game.data.spawn){
 						var spawnEntity = this.getEntity(this.game.data.spawn);
 						this.pc.set('xform.tx', spawnEntity.get('xform.tx'));
 						this.pc.set('xform.ty', spawnEntity.get('xform.ty'));
+					} else {
+						this._spawnPoint = [this.pc.get('xform.tx'),this.pc.get('xform.ty')];
 					}
 				}
-				*/
 				console.log(this.pc.get('xform.tx'),this.pc.get('xform.ty'))
 
 				var names = Object.keys(this.game.data.persist.entities);
@@ -168,13 +168,30 @@ define([
 				
 
 			},
+			spawnPlayer : function(){
+				if (!this.pc){
+					console.log('Spawn')
+					this._lives--;
+					if (this._lives>0){
+						pc = this.factory.create('pc', {xform: {tx: this._spawnPoint[0], ty: this._spawnPoint[1]}});
+						pc.name = 'pc'
+						this.addEntity(pc);
+						pc.tags.push('pc')
+					} else {
+						this.loseGame();
+					}
+				}
+			},
 			tick: function(delta){
 			    this._super(delta);
 				if (this.pc){
 					if (!this.pc.id){
 						this.pc = null;
-						this.loseGame();
+						this.createTimeout(this.spawnPlayer.bind(this),1);
 					}
+				} else {
+					var pc = this.getEntity('pc');
+					this.pc = pc;
 				}
 				for (var i = this._entity_ids.length - 1; i >= 0; i--) {
 					var e = this._entities[this._entity_ids[i]];
@@ -190,7 +207,7 @@ define([
 					this.containers.map.position.y = 32-this.pc.get('xform.ty')+this.game.height/(2*this._scale);
 
 					if (this.pc.get('xform.ty')>this.map.height*this.map.tileSize-this.map.tileSize){
-						this.loseGame()
+						this.removeEntity(this.pc);
 					}
 				} else {
 					if (this.input.isDown('left')){
@@ -247,6 +264,9 @@ define([
 				ty = e.get('xform.ty');
 				e.on('entity.moved', this._updateHash.bind(this));
 				this._updateHash(e, tx, ty);
+				if (e.name){
+					this._entity_name[e.name] = e;
+				}
 				return e;
 			},
 			
@@ -260,6 +280,7 @@ define([
 					idx = tile.data.entities.indexOf(e);
 					tile.data.entities.splice(idx, 1);
 				}
+				delete this._entity_name[e.name];
 				e.id = null;
 				delete this._entities[id];
 			},
