@@ -24,6 +24,15 @@ define([
 					this.set('chara.dir', dir)
 				}
 			},
+			takeDamage: function(amount){
+				var health = this.get('chara.health');
+				var new_health = health - amount;
+				console.log('Damaged:', this.entity.name)
+				if (new_health < 0){
+					this.state.killEntity(this.entity);
+				}
+				this.set('chara.health', new_health);
+			},
 			tick: function(delta){
 				
 				if (this.get('movement.vx')<0){

@@ -9,7 +9,7 @@ define([
 	'./components/sound',
 	'./components/interact',
 	'./components/anim',
-	'./components/persist',
+	'./components/swirl',
 	'./components/goal',
 	'./components/enemy',
 	'./components/jump'

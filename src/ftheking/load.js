@@ -8,9 +8,7 @@ define([
                 this.stage = new PIXI.Stage(0x000000);
                 this.container = new PIXI.DisplayObjectContainer();
                 this._scale = 1;
-                this.container.scale.x= window.innerWidth / game.width;
-                this.container.scale.y= window.innerHeight / game.height;
-            
+                
                 this.text = new PIXI.BitmapText('Loading', {font: '96px 8bit', align: 'center'});
                 this.text.alpha = 1;
                 this.text.position.x = game.renderer.width / 2 - (this.text.width/2);

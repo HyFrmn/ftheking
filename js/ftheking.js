@@ -21486,7 +21486,7 @@ function(Observable){
             }
         },
         keyUpCallback : function(e){
-            console.log('keyup:' + REVERSE_KEYCODES[e.keyCode]);
+            //console.log('keyup:' + REVERSE_KEYCODES[e.keyCode]);
             delete this._isNewKeyDown[e.keyCode];
             this._isKeyDown[e.keyCode] = undefined;
         },
@@ -21540,11 +21540,12 @@ define('sge/game',[
 			init: function(options){
 				this.options = {
 					width:  720,
-					height: 405,
+					height: 540,
 					fps:    60
 				};
 				var canvas = document.createElement('canvas'); 
-				if (navigator.isCocoonJS || true){      
+				/*
+				if (navigator.isCocoonJS){      
 	                canvas.style.cssText="idtkscale:ScaleAspectFill;";
 	                canvas.width= window.innerWidth;
 	                canvas.height= window.innerHeight;
@@ -21556,7 +21557,11 @@ define('sge/game',[
 	                canvas.height= this.options.height;
 	            	this.width = canvas.width;
 	            	this.height = canvas.height;
-	            }
+	            }*/
+	            canvas.width= this.options.width;
+                canvas.height= this.options.height;
+            	this.width = canvas.width;
+            	this.height = canvas.height;
 
 				this.renderer = null;
 
@@ -21566,6 +21571,7 @@ define('sge/game',[
 				this._currentState = null;
 				//Don't Support Canvas
 				this.renderer = PIXI.autoDetectRenderer(this.width, this.height, canvas);
+				console.log(this.renderer.width, this.renderer.height)
 				this.input = new Input(canvas);
 			},
 			start: function(data){
@@ -21657,20 +21663,45 @@ define('sge/gamestate',[
 		'./class'
 	], 
 	function(Class){
+		var Timeout = Class.extend({
+			init: function(state, delay, callback){
+				this.state = state;
+				this.id = state._timeout_id++;
+				this._timeout = state._time + delay;
+				state._timeouts[this.id] = this;
+				this.callback = callback;
+			},
+			check: function(){
+				if (this.state._time >= this._timeout){
+					this.callback();
+					delete this.state._timeouts[this.id];
+				}
+			}
+		})
 
 		var GameState =  Class.extend({
 			init: function(game, options){
 				this.game = game;
 				this._time = 0;
 				this.input = game.input.createProxy();
+				this._timeouts = {};
+				this._timeout_id = 0;
 			},
 			startState: function(){},
 			endState: function(){},
 			tick: function(delta){
 			    this._time += delta;
+			    var ids = Object.keys(this._timeouts);
+			    for (var i = ids.length - 1; i >= 0; i--) {
+			    	this._timeouts[ids[i]].check();
+			    }
 			},
 		    getTime: function(){
 		        return this._time;
+		    },
+		    createTimeout: function(func, delay){
+		    	var timeout = new Timeout(this, delay, func);
+		    	return timeout;
 		    }
 		});
 
@@ -22845,7 +22876,7 @@ define('ftheking/tilemap',[
 					var tile = new Tile();
 					tile.layers.base = 0;
 					this.tiles.push(tile);
-				};
+				}
 			},
 	        getIndex : function(x, y){
 	            var index = (y * this.width) + x;
@@ -22866,15 +22897,16 @@ define('ftheking/tilemap',[
 	        getTiles: function(){
 	        	return this.tiles.slice(0);
 	        },
-			render: function(){
+			render: function(x,y){
 				if (!this._ready){
 					return
 				}
 				var pixelWidth = this.width * this.tileSize;
 				var pixelHeight = this.height * this.tileSize;
 				var chunks = [Math.ceil(pixelWidth/this._chunkSize),Math.ceil(pixelHeight/this._chunkSize)];
-				var startX = -this.container.position.x;
-				var startY = -this.container.position.y;
+				var newPosition = this.container.parent.position;
+				var startX = -newPosition.x;
+				var startY = -newPosition.y;
 				var endX = startX + this.renderer.width;
 				var endY = startY + this.renderer.height;
 				var scx = Math.floor(startX/this._chunkSize);
@@ -22887,7 +22919,6 @@ define('ftheking/tilemap',[
 						if ((x>=scx) && (x<= sex) &&  y>= scy && y<=sey){
 							if (this.container.children.indexOf(this.chunk[x+'.'+y])<0){
 								this.container.addChild(this.chunk[x+'.'+y]);
-								console.log('Display', x+'.'+y)
 							}
 						} else {
 							if (this.container.children.indexOf(this.chunk[x+'.'+y])>=0){
@@ -22902,7 +22933,7 @@ define('ftheking/tilemap',[
 				var pixelWidth = this.width * this.tileSize;
 				var pixelHeight = this.height * this.tileSize;
 				var chunks = [Math.ceil(pixelWidth/this._chunkSize),Math.ceil(pixelHeight/this._chunkSize)];
-				
+				console.log('Chunks', chunks)
 				for (var x=0; x<chunks[0]; x++){
 					for (var y=0; y<chunks[1]; y++){
 						this.preRenderChunk(x, y);
@@ -22910,7 +22941,6 @@ define('ftheking/tilemap',[
 				}
 
 				this._ready = true;
-				this.render();
 
 			},
 			preRenderChunk: function(cx, cy){
@@ -23002,9 +23032,10 @@ define('ftheking/tiledlevel',[
 						};
 						for (var i = layer.data.length - 1; i >= 0; i--) {
 							var tileIdx = layer.data[i]-1;
-							if (layerName=='terrain'){
+							if (layerName=='base'){
 								map.tiles[i].data.passable = (tileIdx<0)
-							} else {
+							} 
+							if (layerName!='terrain'){
 								if (tileIdx>=0){
 									map.tiles[i].layers[layerName] = tileIdx;
 								} else {
@@ -23059,6 +23090,9 @@ define('ftheking/tiledlevel',[
 				if (entityLayer){
 					for (var i = entityLayer.objects.length - 1; i >= 0; i--) {
 						var entityData = entityLayer.objects[i];
+						if (!entityData.visible){
+							continue;
+						}
 						if (state.factory.has(entityData.type)){
 							var eData = {};
 							var decorators = []
@@ -23083,7 +23117,6 @@ define('ftheking/tiledlevel',[
 								
 
 							}.bind(this));
-							console.log({xform: {tx: entityData.x+(entityData.width/2), ty: entityData.y+entityData.height-1}})
 							eData = deepExtend(eData, {xform: {tx: entityData.x+(entityData.width/2), ty: entityData.y+entityData.height-1}}); //-32 for tiled hack.
 							
 							var spawn = true;
@@ -23103,12 +23136,12 @@ define('ftheking/tiledlevel',[
 								}
 							}
 							entity.name = name;
+							
 							if (spawn){
 								state.addEntity(entity);	
 							} else {
 								state._unspawnedEntities[entity.name] = entity;
 							}
-							state._entity_name[entity.name] = entity;
 						} else {
 							console.error('Missing:', entityData.type);
 						}
@@ -24217,9 +24250,6 @@ define('ftheking/physics',[
 								}
 								
 								response.clear();
-								
-								
-
 							}
 							
 						}
@@ -24230,7 +24260,6 @@ define('ftheking/physics',[
 				
 
 				if (vx==undefined){
-					console.log(this.gravity*delta)
 					entity.set('physics.vy', entity.get('physics.vy') + (this.gravity * delta));
 					vx = entity.get('physics.vx') * delta;
 					vy = entity.get('physics.vy') * delta;
@@ -24462,6 +24491,15 @@ define('ftheking/components/chara',[
 					this.set('chara.dir', dir)
 				}
 			},
+			takeDamage: function(amount){
+				var health = this.get('chara.health');
+				var new_health = health - amount;
+				console.log('Damaged:', this.entity.name)
+				if (new_health < 0){
+					this.state.killEntity(this.entity);
+				}
+				this.set('chara.health', new_health);
+			},
 			tick: function(delta){
 				
 				if (this.get('movement.vx')<0){
@@ -24537,14 +24575,8 @@ define('ftheking/components/attack',[
 							ep.set('physics.vx', -100)
 						}
 						ep.set('physics.vy', -100)
-						ep.set('chara.health', ep.get('chara.health')-1);
-						console.log('Health',ep.get('chara.health') )
-						if (ep.get('chara.health')<=0){
-							this.state.removeEntity(ep);
-						}
-						response.clear();
+						ep.chara.takeDamage(1)
 					}
-
 				};
 			},
 			attackEnd: function(){
@@ -24576,6 +24608,11 @@ define('ftheking/components/physics',[
 				}
 			},
 			deregister: function(state){
+				
+				idx = this.state.physics.entities.indexOf(this.entity);
+				if (idx>=0){
+				    this.state.physics.entities.splice(idx, 1);
+				}
 			},
 		});		
 	}
@@ -24771,38 +24808,27 @@ define('ftheking/components/anim',[
 		});		
 	}
 );
-define('ftheking/components/persist',[
+define('ftheking/components/swirl',[
 	'sge',
 	'../component'
 	], function(sge, Component){
-		Component.add('persist', {
+		Component.add('swirl', {
 			init: function(entity, data){
 				this._super(entity, data);
-				this._attrs = data.attrs;
-				this._global = Boolean(data.global);
 			},
 			register: function(state){
 				this._super(state);
-				this.on('persist', this.persist);
+				this.on('contact.start', this.contacted);
 			},
-			deregister: function(state){
-				this._super(state);
-				this.off('persist', this.persist);
+			deregister: function(){
+				this.off('contact.start', this.contacted)
 			},
-			persist: function(){
-				var mapName = this.state.game.data.map;
-				var gameData = this.state.game.data.persist;
-				var persistData = {};
-				for (var i = this._attrs.length - 1; i >= 0; i--) {
-					var attr = this._attrs[i];
-					persistData[attr] = this.get(attr);
+			contacted: function(e){
+				if (e.tags.indexOf('pc')>=0){
+					this.state.killEntity(this.entity);
+					this.state.addPoints(10)
 				}
-				if (this._global){
-					gameData.entities[this.entity.name] = persistData;
-				} else {
-					gameData.maps[mapName].entities[this.entity.name] = persistData;
-				}
-			}
+			},
 		});		
 	}
 );
@@ -24813,17 +24839,23 @@ define('ftheking/components/goal',[
 		Component.add('goal', {
 			init: function(entity, data){
 				this._super(entity, data);
+				console.log('Goal', data)
+				this._nextLevel = data.level || null;
 			},
 			register: function(state){
 				this._super(state);
-				this.on('contact.start',  this.contact);
+				this.on('contact.start', this.contact);
 			},
 			deregister: function(){
-				this.on('contact.start',  this.contact);
+				this.on('contact.start', this.contact);
 			},
 			contact: function(e){
 				if (e==this.state.pc){
-					this.state.winGame();
+					if (this._nextLevel){
+						this.state.changeLevel(this._nextLevel)
+					} else {
+						this.state.winGame();
+					}
 				}
 			}
 		});		
@@ -24840,13 +24872,22 @@ define('ftheking/components/enemy',[
 			},
 			register: function(state){
 				this._super(state);
-				this.on('contact.start', this.turnaround);
+				this.on('contact.start', this.contacted);
 			},
 			deregister: function(){
-				this.off('contact.start', this.turnaround)
+				this.off('contact.start', this.contacted)
 			},
 			turnaround: function(){
 				this.set('movement.vx', this.get('movement.vx') * -1)
+			},
+			contacted: function(e){
+				console.log('Contact!')
+				if (e.tags.indexOf('pc')>=0){
+					this.entity.attack.attackStart();
+					//e.chara.takeDamage(1);
+				} else {
+					this.turnaround();
+				}
 			},
 			tick: function(){
 				if (this.entity.physics.grounded){
@@ -24870,6 +24911,7 @@ define('ftheking/components/enemy',[
 					}
 				}
 
+				/*
 				var pc = this.state.getEntity('pc');
 				if (pc){
 					var dx = this.get('xform.tx') - pc.get('xform.tx');
@@ -24880,6 +24922,7 @@ define('ftheking/components/enemy',[
 						this.entity.attack.attackStart();
 					}
 				} 
+				*/
 			}
 		});		
 	}
@@ -24892,27 +24935,34 @@ define('ftheking/components/jump',[
 			init: function(entity, data){
 				this._super(entity, data);
 				this._jumping = false;
+				this._double = false;
+				this._doubleSet = false;
 			},
 			tick: function(){
 				if (this.input.isDown('space')){
 					if (this._jumping){
-
+						if (this._doubleSet && !this._double){
+							this._double = true;
+							this.set('physics.vy', -700);
+						}
 					} else {
 						if (this.entity.physics.grounded){
-							this.set('physics.vy', -900);
+							this.set('physics.vy', -700);
 							this._jumping = true;
+							this._doubleSet = false;
 						}
 					}
 				} else {
 					if (this._jumping){
-						console.log('Stop Jumping')
-						this._jumping = false;
+						this._doubleSet = true;
 						if (this.get('physics.vy')<0){
 							this.set('physics.vy', this.get('physics.vy') * 0.33);
 						}
 					}
 					if (this.entity.physics.grounded){
 						this._jumping = false;
+						this._double = false;
+						this._doubleSet = true;
 					}
 				}
 
@@ -24935,7 +24985,7 @@ define('ftheking/factory',[
 	'./components/sound',
 	'./components/interact',
 	'./components/anim',
-	'./components/persist',
+	'./components/swirl',
 	'./components/goal',
 	'./components/enemy',
 	'./components/jump'
@@ -25420,21 +25470,21 @@ define('ftheking/hud',[
 			init: function(state){
 				this.pc = null;
 				this.state = state;
-				this.container = new PIXI.DisplayObjectContainer	();
+				this.game = state.game;
+				this.points = 0;
+				this.container = new PIXI.DisplayObjectContainer();
+				this.state.containers.hud.addChild(this.container)
 			},
-			setPC: function(pc){
-				this.pc = pc;
-				this.createDisplay();
-				this.state.containers.hud.addChild(this.container);
-				this.pc.on('item.equiped', this.updateItem.bind(this));
+			createDisplay: function(container){
+				this._pointsText = new PIXI.BitmapText('Points: 0000', {font: '64px marker_pink'});
+				this.container.addChild(this._pointsText);
+				this._pointsText.position.y = 20;
+				this._pointsText.position.x = this.state.game.renderer.width*2 - this._pointsText.width - 40;
+				this._pointsText.setText('Points: ' + this.game.data.points)
 			},
-			updateItem: function(item){
-				console.log(item);
-				this._equiped.setText('Equiped:' + item);
-			},
-			createDisplay: function(){
-				this._equiped = new PIXI.BitmapText('Equiped: null', {font: '16px 8bit'});
-				this.container.addChild(this._equiped);
+			addPoints: function(points){
+				this.game.data.points += points;
+				this._pointsText.setText('Points: ' + this.game.data.points)
 			}
 		})
 
@@ -25514,18 +25564,16 @@ define('ftheking/subzerostate',[
 				this._entities = {};
 				this._entity_ids = [];
 				this._entity_name = {};
-
+				this._lives = 3;
+				this._points = 0;
 				this._entity_spatial_hash = {}
 				this._unspawnedEntities={}
-
+				this._killList = [];
 
 				this.stage = new PIXI.Stage(0xD5F5F3);
 				this.container = new PIXI.DisplayObjectContainer();
-				this._scale = 1;
-				//if (navigator.isCocoonJS){
-					this.container.scale.x= window.innerWidth / game.width;
-					this.container.scale.y= window.innerHeight / game.height;
-				//}
+				this._scale = 0.5;
+				
 				this.container.scale.x *= this._scale;
 				this.container.scale.y *= this._scale
 				this.containers={};
@@ -25539,11 +25587,11 @@ define('ftheking/subzerostate',[
 				this.container.addChild(this.containers.hud);
 
 				this.curtain = new PIXI.Graphics();
-				/*
+				//*
 				this.curtain.beginFill('0x000000');
-				this.curtain.drawRect(0,0,game.width, game.height);
+				this.curtain.drawRect(0,0,game.width*2, game.height*2);
 				this.curtain.endFill();
-				*/
+				//*/
 				this.container.addChild(this.curtain);
 				
 				this.physics = new Physics();
@@ -25575,6 +25623,9 @@ define('ftheking/subzerostate',[
 				} else {
 					this.game.changeState('cutscene');
 				}
+			},
+			addPoints : function(points){
+				this.hud.addPoints(points)
 			},
 			loadLevelData : function(levelData){
 				this.stage.addChild(this.container);
@@ -25608,18 +25659,17 @@ define('ftheking/subzerostate',[
 			initGame: function(){
 				var pc = this.getEntity('pc');
 				this.pc = pc;
-				/*
 				if (this.pc){
-					this.hud.setPC(pc);
+					this.pc.on('entity.killed', this.spawnPlayer.bind(this));
 					if (this.game.data.spawn){
 						var spawnEntity = this.getEntity(this.game.data.spawn);
 						this.pc.set('xform.tx', spawnEntity.get('xform.tx'));
 						this.pc.set('xform.ty', spawnEntity.get('xform.ty'));
+					} else {
+						this._spawnPoint = [this.pc.get('xform.tx'),this.pc.get('xform.ty')];
 					}
 				}
-				*/
-				console.log(this.pc.get('xform.tx'),this.pc.get('xform.ty'))
-
+			
 				var names = Object.keys(this.game.data.persist.entities);
 				for (var i = names.length - 1; i >= 0; i--) {
 					var name = names[i];
@@ -25649,14 +25699,18 @@ define('ftheking/subzerostate',[
 					}
 				}
 
-				//this.map.container.scale.x = this.map.container.scale.y = 0.25
 				this.containers.map.addChild(this.map.container);
 				this.containers.map.addChild(this.containers.underfoot);
 				this.containers.map.addChild(this.containers.entities);
-				//this.containers.map.addChild(this.containers.overhead);
-				this.containers.map.position.x = 0;//this.game.width/(2*this._scale)-(this.map.width*this.map.tileSize*0.5);
-				this.containers.map.position.y = 0;//this.game.height/(2*this._scale)-(this.map.height*this.map.tileSize*0.5);
+				
+				this.containers.map.position.x = 0;
+				this.containers.map.position.y = 0;
+				
+				//if @DEBUG
 				console.log('Starting Game')
+				//endif
+				
+				this.hud.createDisplay(this.containers.hud);
 				this.game.getState('load').ready('game');
 				TweenLite.to(this.curtain, 1, {alpha: 0, delay:1, onComplete: function(){
 					console.log('Game Started')
@@ -25666,49 +25720,50 @@ define('ftheking/subzerostate',[
 				
 
 			},
+			spawnPlayer : function(){
+				this.pc = null;
+				this.createTimeout(function(){
+					if (!this.getEntity('pc')){
+						console.log('Spawn')
+						this._lives--;
+						if (this._lives>0){
+							pc = this.factory.create('pc', {xform: {tx: this._spawnPoint[0], ty: this._spawnPoint[1]}});
+							pc.name = 'pc'
+							this.addEntity(pc);
+							pc.tags.push('pc');
+							this.pc = pc;
+							this.pc.on('entity.killed', this.spawnPlayer.bind(this));
+						} else {
+							this.loseGame();
+						}
+					}
+				}.bind(this), 1)
+			},
+			killEntity: function(e){
+				this._killList.push(e);
+				e.trigger('entity.killed');
+			},
+			pruneEntities: function(){
+				this._killList.forEach(this.removeEntity.bind(this));
+				this._killList =[ ];
+			},
 			tick: function(delta){
 			    this._super(delta);
-				if (this.pc){
-					if (!this.pc.id){
-						this.pc = null;
-						this.loseGame();
-					}
-				}
 				for (var i = this._entity_ids.length - 1; i >= 0; i--) {
 					var e = this._entities[this._entity_ids[i]];
 					e.tick(delta);
 					if (e.get('xform.ty')>this.map.height*this.map.tileSize){
-						this.removeEntity(e);
-					}
-				};
-				this.physics.tick(delta);
-
-				if (this.pc){
-					this.containers.map.position.x = -this.pc.get('xform.tx')+this.game.width/(2*this._scale);
-					this.containers.map.position.y = 32-this.pc.get('xform.ty')+this.game.height/(2*this._scale);
-
-					if (this.pc.get('xform.ty')>this.map.height*this.map.tileSize-this.map.tileSize){
-						this.loseGame()
-					}
-				} else {
-					if (this.input.isDown('left')){
-						this.containers.map.position.x += 7;
-					}
-
-					if (this.input.isDown('right')){
-						this.containers.map.position.x += -7;
-					}
-
-					if (this.input.isDown('up')){
-						this.containers.map.position.y += 7;
-					}
-
-					if (this.input.isDown('down')){
-						this.containers.map.position.y += -7;
+						this.killEntity(e);
 					}
 				}
-				
-				this.map.render();
+				this.physics.tick(delta);
+
+				this.pruneEntities();
+				if (this.pc){
+					this.containers.map.position.x = Math.min(0,-this.pc.get('xform.tx')+this.game.width/(2*this._scale));
+					this.containers.map.position.y = Math.max((-this.map.tileSize * this.map.height * 0.5)+this.game.renderer.height, 300-this.pc.get('xform.ty')+this.game.height/(2*this._scale));
+				}	
+				this.map.render(-this.containers.map.position.x, -this.containers.map.position.y);
 				for (var i = this._entity_ids.length - 1; i >= 0; i--) {
 					var e = this._entities[this._entity_ids[i]];
 					e.render();
@@ -25745,19 +25800,24 @@ define('ftheking/subzerostate',[
 				ty = e.get('xform.ty');
 				e.on('entity.moved', this._updateHash.bind(this));
 				this._updateHash(e, tx, ty);
+				if (e.name){
+					this._entity_name[e.name] = e;
+				}
 				return e;
 			},
 			
 			removeEntity: function(e){
+				console.log('Removing', e.name)
 				e.deregister(this);
 				var id = e.id;
-				var idx = this._entity_ids.indexOf(e.id);
+				var idx = this._entity_ids.indexOf(id);
 				this._entity_ids.splice(idx,1);
 				tile = e.get('map.tile');
 				if (tile){
 					idx = tile.data.entities.indexOf(e);
 					tile.data.entities.splice(idx, 1);
 				}
+				delete this._entity_name[e.name];
 				e.id = null;
 				delete this._entities[id];
 			},
@@ -25858,9 +25918,7 @@ define('ftheking/paused',[
                 this.stage = new PIXI.Stage(0x000000);
                 this.container = new PIXI.DisplayObjectContainer();
                 this._scale = 1;
-                this.container.scale.x= window.innerWidth / game.width;
-                this.container.scale.y= window.innerHeight / game.height;
-            
+                
                 /*
                 var background = new PIXI.Sprite.fromFrame('backgrounds/space_b');
                 this.stage.addChild(background);
@@ -25897,9 +25955,7 @@ define('ftheking/load',[
                 this.stage = new PIXI.Stage(0x000000);
                 this.container = new PIXI.DisplayObjectContainer();
                 this._scale = 1;
-                this.container.scale.x= window.innerWidth / game.width;
-                this.container.scale.y= window.innerHeight / game.height;
-            
+                
                 this.text = new PIXI.BitmapText('Loading', {font: '96px 8bit', align: 'center'});
                 this.text.alpha = 1;
                 this.text.position.x = game.renderer.width / 2 - (this.text.width/2);
@@ -25936,8 +25992,8 @@ define('ftheking/mainmenu',[
                 this.stage = new PIXI.Stage(0x000000);
                 this.container = new PIXI.DisplayObjectContainer();
                 this._scale = 1;
-                this.container.scale.x= window.innerWidth / game.width;
-                this.container.scale.y= window.innerHeight / game.height;
+                //this.container.scale.x= window.innerWidth / game.width;
+                //this.container.scale.y= window.innerHeight / game.height;
             
                 /*
                 this.background = new PIXI.Sprite.fromFrame('backgrounds/space_b');
@@ -25945,14 +26001,21 @@ define('ftheking/mainmenu',[
                 this.container.addChild(this.background);
                 */
                
-                this.text = new PIXI.BitmapText('F The King', {font: '96px 8bit', align: 'center'});
+                this.text = new PIXI.BitmapText('F The King', {font: '96px marker_pink', align: 'center'});
                 this.text.position.x = game.renderer.width * 0.5 - (this.text.width * 0.5);
                 this.text.position.y = game.renderer.height / 2 - 96;
                 this.text.alpha = 0;
                 this.container.addChild(this.text);
 
+                this.subtitle = new PIXI.BitmapText('The Saga to Defend Candy', {font: '48px marker_pink', align: 'center'});
+                this.subtitle.position.x = game.renderer.width * 0.5 - (this.subtitle.width * 0.5);
+                this.subtitle.position.y = (game.renderer.height / 2) + 12;
+                this.subtitle.alpha = 0;
+                this.container.addChild(this.subtitle);
+
                 this.instructions = new PIXI.BitmapText('Press Space to Start Game', {font: '32px 8bit', align:'center'});
                 this.instructions.position.y = game.renderer.height - 64;
+                this.instructions.position.x = 64;
                 this.instructions.alpha = 0;
                 this.container.addChild(this.instructions);
 
@@ -25972,12 +26035,13 @@ define('ftheking/mainmenu',[
             },
             startState: function(){
                 this.container.alpha = 1;
-                //this.background.alpha = 0;
+                this.subtitle.alpha = 0;
                 this.text.alpha = 0;
                 this.instructions.alpha = 0;
                 var tl = new TimelineLite();
                 //tl.add(TweenLite.to(this.background, 1, {alpha: 1}));
                 tl.add(TweenLite.to(this.text, 1, {alpha: 1}));
+                tl.add(TweenLite.to(this.subtitle, 1, {alpha: 1}));
                 tl.add(TweenLite.to(this.instructions, 1, {alpha: 1}));
             }
         });
@@ -26280,8 +26344,6 @@ define('ftheking/states',[
                     this.stage = new PIXI.Stage(0x000000);
                     this.container = new PIXI.DisplayObjectContainer();
                     this._scale = 1;
-                    this.container.scale.x= window.innerWidth / game.width;
-                    this.container.scale.y= window.innerHeight / game.height;
                 
                     /*
                     var background = new PIXI.Sprite.fromFrame('backgrounds/space_a');
@@ -26315,9 +26377,7 @@ define('ftheking/states',[
                     this.stage = new PIXI.Stage(0x000000);
                     this.container = new PIXI.DisplayObjectContainer();
                     this._scale = 1;
-                    this.container.scale.x= window.innerWidth / game.width;
-                    this.container.scale.y= window.innerHeight / game.height;
-                
+                    
                     /*
                     var background = new PIXI.Sprite.fromFrame('backgrounds/space_a');
                     this.stage.addChild(background);

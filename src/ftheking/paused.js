@@ -8,9 +8,7 @@ define([
                 this.stage = new PIXI.Stage(0x000000);
                 this.container = new PIXI.DisplayObjectContainer();
                 this._scale = 1;
-                this.container.scale.x= window.innerWidth / game.width;
-                this.container.scale.y= window.innerHeight / game.height;
-            
+                
                 /*
                 var background = new PIXI.Sprite.fromFrame('backgrounds/space_b');
                 this.stage.addChild(background);

@@ -118,7 +118,6 @@ define([
 								
 
 							}.bind(this));
-							console.log({xform: {tx: entityData.x+(entityData.width/2), ty: entityData.y+entityData.height-1}})
 							eData = deepExtend(eData, {xform: {tx: entityData.x+(entityData.width/2), ty: entityData.y+entityData.height-1}}); //-32 for tiled hack.
 							
 							var spawn = true;
@@ -144,12 +143,12 @@ define([
 							// @if DEBUG
 							console.warn('Created Entity:', name, entityData.type, entity.get('xform.tx'), entity.get('xform.ty'));
 							// @endif
+							
 							if (spawn){
 								state.addEntity(entity);	
 							} else {
 								state._unspawnedEntities[entity.name] = entity;
 							}
-							state._entity_name[entity.name] = entity;
 						} else {
 							console.error('Missing:', entityData.type);
 						}

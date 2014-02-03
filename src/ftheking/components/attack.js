@@ -31,14 +31,8 @@ define([
 							ep.set('physics.vx', -100)
 						}
 						ep.set('physics.vy', -100)
-						ep.set('chara.health', ep.get('chara.health')-1);
-						console.log('Health',ep.get('chara.health') )
-						if (ep.get('chara.health')<=0){
-							this.state.removeEntity(ep);
-						}
-						response.clear();
+						ep.chara.takeDamage(1)
 					}
-
 				};
 			},
 			attackEnd: function(){

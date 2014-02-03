@@ -9,13 +9,22 @@ define([
 			},
 			register: function(state){
 				this._super(state);
-				this.on('contact.start', this.turnaround);
+				this.on('contact.start', this.contacted);
 			},
 			deregister: function(){
-				this.off('contact.start', this.turnaround)
+				this.off('contact.start', this.contacted)
 			},
 			turnaround: function(){
 				this.set('movement.vx', this.get('movement.vx') * -1)
+			},
+			contacted: function(e){
+				console.log('Contact!')
+				if (e.tags.indexOf('pc')>=0){
+					this.entity.attack.attackStart();
+					//e.chara.takeDamage(1);
+				} else {
+					this.turnaround();
+				}
 			},
 			tick: function(){
 				if (this.entity.physics.grounded){
@@ -39,6 +48,7 @@ define([
 					}
 				}
 
+				/*
 				var pc = this.state.getEntity('pc');
 				if (pc){
 					var dx = this.get('xform.tx') - pc.get('xform.tx');
@@ -49,6 +59,7 @@ define([
 						this.entity.attack.attackStart();
 					}
 				} 
+				*/
 			}
 		});		
 	}

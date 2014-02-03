@@ -41,7 +41,7 @@ define([
 					var tile = new Tile();
 					tile.layers.base = 0;
 					this.tiles.push(tile);
-				};
+				}
 			},
 	        getIndex : function(x, y){
 	            var index = (y * this.width) + x;
@@ -62,15 +62,16 @@ define([
 	        getTiles: function(){
 	        	return this.tiles.slice(0);
 	        },
-			render: function(){
+			render: function(x,y){
 				if (!this._ready){
 					return
 				}
 				var pixelWidth = this.width * this.tileSize;
 				var pixelHeight = this.height * this.tileSize;
 				var chunks = [Math.ceil(pixelWidth/this._chunkSize),Math.ceil(pixelHeight/this._chunkSize)];
-				var startX = -this.container.position.x;
-				var startY = -this.container.position.y;
+				var newPosition = this.container.parent.position;
+				var startX = -newPosition.x;
+				var startY = -newPosition.y;
 				var endX = startX + this.renderer.width;
 				var endY = startY + this.renderer.height;
 				var scx = Math.floor(startX/this._chunkSize);
@@ -83,7 +84,6 @@ define([
 						if ((x>=scx) && (x<= sex) &&  y>= scy && y<=sey){
 							if (this.container.children.indexOf(this.chunk[x+'.'+y])<0){
 								this.container.addChild(this.chunk[x+'.'+y]);
-								console.log('Display', x+'.'+y)
 							}
 						} else {
 							if (this.container.children.indexOf(this.chunk[x+'.'+y])>=0){
@@ -98,7 +98,7 @@ define([
 				var pixelWidth = this.width * this.tileSize;
 				var pixelHeight = this.height * this.tileSize;
 				var chunks = [Math.ceil(pixelWidth/this._chunkSize),Math.ceil(pixelHeight/this._chunkSize)];
-				
+				console.log('Chunks', chunks)
 				for (var x=0; x<chunks[0]; x++){
 					for (var y=0; y<chunks[1]; y++){
 						this.preRenderChunk(x, y);
@@ -106,7 +106,6 @@ define([
 				}
 
 				this._ready = true;
-				this.render();
 
 			},
 			preRenderChunk: function(cx, cy){

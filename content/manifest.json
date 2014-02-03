@@ -1,14 +1,16 @@
 {
     "sprites" : [
         ["hero", [35,35]],
-        ["enemy", [35,35]]
+        ["enemy", [35,35]],
+        ["swirl_red", [80,80]]
     ],
     "images" : [
 
     ],
     "fonts" : [
         "standard_white",
-        "standard_black"
+        "standard_black",
+        "candy_markerpink"
     ],
     "tiles" : [
         "basetiles"
@@ -17,6 +19,7 @@
         "standard"
     ],
     "levels" : [
+        "level1",
         "test"
     ],
     "audio" : [

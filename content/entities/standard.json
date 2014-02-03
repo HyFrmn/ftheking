@@ -94,5 +94,22 @@
             "type" : 2
         },
         "goal": {}
+    },
+    "swirl" : {
+        "meta" : {
+            "inherit" : "trigger"
+        },
+        "sprite" : {
+            "src" : "swirl_red",
+            "container" : "entities",
+            "offsety" : -40,
+            "offsetx" : -40
+        },
+        "physics" : {
+            "width" : 70,
+            "height": 70,
+            "type" : 2
+        },
+        "swirl" : {}
     }
 }

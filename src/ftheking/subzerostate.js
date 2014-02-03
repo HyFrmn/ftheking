@@ -17,17 +17,15 @@ define([
 				this._entity_ids = [];
 				this._entity_name = {};
 				this._lives = 3;
+				this._points = 0;
 				this._entity_spatial_hash = {}
 				this._unspawnedEntities={}
-
+				this._killList = [];
 
 				this.stage = new PIXI.Stage(0xD5F5F3);
 				this.container = new PIXI.DisplayObjectContainer();
-				this._scale = 1;
-				//if (navigator.isCocoonJS){
-					this.container.scale.x= window.innerWidth / game.width;
-					this.container.scale.y= window.innerHeight / game.height;
-				//}
+				this._scale = 0.5;
+				
 				this.container.scale.x *= this._scale;
 				this.container.scale.y *= this._scale
 				this.containers={};
@@ -43,7 +41,7 @@ define([
 				this.curtain = new PIXI.Graphics();
 				//*
 				this.curtain.beginFill('0x000000');
-				this.curtain.drawRect(0,0,game.width, game.height);
+				this.curtain.drawRect(0,0,game.width*2, game.height*2);
 				this.curtain.endFill();
 				//*/
 				this.container.addChild(this.curtain);
@@ -78,6 +76,9 @@ define([
 					this.game.changeState('cutscene');
 				}
 			},
+			addPoints : function(points){
+				this.hud.addPoints(points)
+			},
 			loadLevelData : function(levelData){
 				this.stage.addChild(this.container);
 				this.map = new TileMap(levelData.width, levelData.height, this.game.renderer);
@@ -111,7 +112,7 @@ define([
 				var pc = this.getEntity('pc');
 				this.pc = pc;
 				if (this.pc){
-					this.hud.setPC(pc);
+					this.pc.on('entity.killed', this.spawnPlayer.bind(this));
 					if (this.game.data.spawn){
 						var spawnEntity = this.getEntity(this.game.data.spawn);
 						this.pc.set('xform.tx', spawnEntity.get('xform.tx'));
@@ -120,8 +121,7 @@ define([
 						this._spawnPoint = [this.pc.get('xform.tx'),this.pc.get('xform.ty')];
 					}
 				}
-				console.log(this.pc.get('xform.tx'),this.pc.get('xform.ty'))
-
+			
 				var names = Object.keys(this.game.data.persist.entities);
 				for (var i = names.length - 1; i >= 0; i--) {
 					var name = names[i];
@@ -151,14 +151,18 @@ define([
 					}
 				}
 
-				//this.map.container.scale.x = this.map.container.scale.y = 0.25
 				this.containers.map.addChild(this.map.container);
 				this.containers.map.addChild(this.containers.underfoot);
 				this.containers.map.addChild(this.containers.entities);
-				//this.containers.map.addChild(this.containers.overhead);
-				this.containers.map.position.x = 0;//this.game.width/(2*this._scale)-(this.map.width*this.map.tileSize*0.5);
-				this.containers.map.position.y = 0;//this.game.height/(2*this._scale)-(this.map.height*this.map.tileSize*0.5);
+				
+				this.containers.map.position.x = 0;
+				this.containers.map.position.y = 0;
+				
+				//if @DEBUG
 				console.log('Starting Game')
+				//endif
+				
+				this.hud.createDisplay(this.containers.hud);
 				this.game.getState('load').ready('game');
 				TweenLite.to(this.curtain, 1, {alpha: 0, delay:1, onComplete: function(){
 					console.log('Game Started')
@@ -169,65 +173,49 @@ define([
 
 			},
 			spawnPlayer : function(){
-				if (!this.pc){
-					console.log('Spawn')
-					this._lives--;
-					if (this._lives>0){
-						pc = this.factory.create('pc', {xform: {tx: this._spawnPoint[0], ty: this._spawnPoint[1]}});
-						pc.name = 'pc'
-						this.addEntity(pc);
-						pc.tags.push('pc')
-					} else {
-						this.loseGame();
+				this.pc = null;
+				this.createTimeout(function(){
+					if (!this.getEntity('pc')){
+						console.log('Spawn')
+						this._lives--;
+						if (this._lives>0){
+							pc = this.factory.create('pc', {xform: {tx: this._spawnPoint[0], ty: this._spawnPoint[1]}});
+							pc.name = 'pc'
+							this.addEntity(pc);
+							pc.tags.push('pc');
+							this.pc = pc;
+							this.pc.on('entity.killed', this.spawnPlayer.bind(this));
+						} else {
+							this.loseGame();
+						}
 					}
-				}
+				}.bind(this), 1)
+			},
+			killEntity: function(e){
+				this._killList.push(e);
+				e.trigger('entity.killed');
+			},
+			pruneEntities: function(){
+				this._killList.forEach(this.removeEntity.bind(this));
+				this._killList =[ ];
 			},
 			tick: function(delta){
 			    this._super(delta);
-				if (this.pc){
-					if (!this.pc.id){
-						this.pc = null;
-						this.createTimeout(this.spawnPlayer.bind(this),1);
-					}
-				} else {
-					var pc = this.getEntity('pc');
-					this.pc = pc;
-				}
 				for (var i = this._entity_ids.length - 1; i >= 0; i--) {
 					var e = this._entities[this._entity_ids[i]];
 					e.tick(delta);
 					if (e.get('xform.ty')>this.map.height*this.map.tileSize){
-						this.removeEntity(e);
-					}
-				};
-				this.physics.tick(delta);
-
-				if (this.pc){
-					this.containers.map.position.x = -this.pc.get('xform.tx')+this.game.width/(2*this._scale);
-					this.containers.map.position.y = 32-this.pc.get('xform.ty')+this.game.height/(2*this._scale);
-
-					if (this.pc.get('xform.ty')>this.map.height*this.map.tileSize-this.map.tileSize){
-						this.removeEntity(this.pc);
-					}
-				} else {
-					if (this.input.isDown('left')){
-						this.containers.map.position.x += 7;
-					}
-
-					if (this.input.isDown('right')){
-						this.containers.map.position.x += -7;
-					}
-
-					if (this.input.isDown('up')){
-						this.containers.map.position.y += 7;
-					}
-
-					if (this.input.isDown('down')){
-						this.containers.map.position.y += -7;
+						this.killEntity(e);
 					}
 				}
-				
-				this.map.render();
+				this.physics.tick(delta);
+
+				this.pruneEntities();
+				if (this.pc){
+					this.containers.map.position.x = Math.min(0,-this.pc.get('xform.tx')+this.game.width/(2*this._scale));
+					this.containers.map.position.y = Math.max((-this.map.tileSize * this.map.height * 0.5)+this.game.renderer.height, 300-this.pc.get('xform.ty')+this.game.height/(2*this._scale));
+				}	
+				this.map.render(-this.containers.map.position.x, -this.containers.map.position.y);
 				for (var i = this._entity_ids.length - 1; i >= 0; i--) {
 					var e = this._entities[this._entity_ids[i]];
 					e.render();
@@ -271,9 +259,10 @@ define([
 			},
 			
 			removeEntity: function(e){
+				console.log('Removing', e.name)
 				e.deregister(this);
 				var id = e.id;
-				var idx = this._entity_ids.indexOf(e.id);
+				var idx = this._entity_ids.indexOf(id);
 				this._entity_ids.splice(idx,1);
 				tile = e.get('map.tile');
 				if (tile){

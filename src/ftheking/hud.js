@@ -5,21 +5,21 @@ define([
 			init: function(state){
 				this.pc = null;
 				this.state = state;
-				this.container = new PIXI.DisplayObjectContainer	();
+				this.game = state.game;
+				this.points = 0;
+				this.container = new PIXI.DisplayObjectContainer();
+				this.state.containers.hud.addChild(this.container)
 			},
-			setPC: function(pc){
-				this.pc = pc;
-				this.createDisplay();
-				this.state.containers.hud.addChild(this.container);
-				this.pc.on('item.equiped', this.updateItem.bind(this));
+			createDisplay: function(container){
+				this._pointsText = new PIXI.BitmapText('Points: 0000', {font: '64px marker_pink'});
+				this.container.addChild(this._pointsText);
+				this._pointsText.position.y = 20;
+				this._pointsText.position.x = this.state.game.renderer.width*2 - this._pointsText.width - 40;
+				this._pointsText.setText('Points: ' + this.game.data.points)
 			},
-			updateItem: function(item){
-				console.log(item);
-				this._equiped.setText('Equiped:' + item);
-			},
-			createDisplay: function(){
-				this._equiped = new PIXI.BitmapText('Equiped: null', {font: '16px 8bit'});
-				this.container.addChild(this._equiped);
+			addPoints: function(points){
+				this.game.data.points += points;
+				this._pointsText.setText('Points: ' + this.game.data.points)
 			}
 		})
 

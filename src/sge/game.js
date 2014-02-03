@@ -20,11 +20,12 @@ define([
 			init: function(options){
 				this.options = {
 					width:  720,
-					height: 405,
+					height: 540,
 					fps:    60
 				};
 				var canvas = document.createElement('canvas'); 
-				if (navigator.isCocoonJS || true){      
+				/*
+				if (navigator.isCocoonJS){      
 	                canvas.style.cssText="idtkscale:ScaleAspectFill;";
 	                canvas.width= window.innerWidth;
 	                canvas.height= window.innerHeight;
@@ -36,7 +37,11 @@ define([
 	                canvas.height= this.options.height;
 	            	this.width = canvas.width;
 	            	this.height = canvas.height;
-	            }
+	            }*/
+	            canvas.width= this.options.width;
+                canvas.height= this.options.height;
+            	this.width = canvas.width;
+            	this.height = canvas.height;
 
 				this.renderer = null;
 
@@ -46,6 +51,7 @@ define([
 				this._currentState = null;
 				//Don't Support Canvas
 				this.renderer = PIXI.autoDetectRenderer(this.width, this.height, canvas);
+				console.log(this.renderer.width, this.renderer.height)
 				this.input = new Input(canvas);
 			},
 			start: function(data){

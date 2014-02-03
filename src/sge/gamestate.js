@@ -11,7 +11,6 @@ define([
 				this.callback = callback;
 			},
 			check: function(){
-				console.log(this.state._time, this._timeout)
 				if (this.state._time >= this._timeout){
 					this.callback();
 					delete this.state._timeouts[this.id];

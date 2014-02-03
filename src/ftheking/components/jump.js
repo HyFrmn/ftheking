@@ -13,7 +13,6 @@ define([
 				if (this.input.isDown('space')){
 					if (this._jumping){
 						if (this._doubleSet && !this._double){
-							console.log('Double!!')
 							this._double = true;
 							this.set('physics.vy', -700);
 						}
@@ -26,7 +25,6 @@ define([
 					}
 				} else {
 					if (this._jumping){
-						console.log('Stop Jumping')
 						this._doubleSet = true;
 						if (this.get('physics.vy')<0){
 							this.set('physics.vy', this.get('physics.vy') * 0.33);

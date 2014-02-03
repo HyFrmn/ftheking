@@ -47,7 +47,7 @@ module.exports = function(grunt) {
                 options: {
                     archive: "game.zip"
                 },
-                files: [{src: 'content/**'},{src: 'js/ftheking'},{src: 'index.html'}]
+                files: [{src: 'content/**'},{src: 'js/**'},{src: 'index.html'}]
             }
         },
 
