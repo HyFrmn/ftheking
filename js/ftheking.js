@@ -23033,7 +23033,9 @@ define('ftheking/tiledlevel',[
 						for (var i = layer.data.length - 1; i >= 0; i--) {
 							var tileIdx = layer.data[i]-1;
 							if (layerName=='base'){
-								map.tiles[i].data.passable = (tileIdx<0)
+								map.tiles[i].data.passable = (tileIdx<0);
+								map.tiles[i].data.lethal = (tileIdx==21);
+								
 							} 
 							if (layerName!='terrain'){
 								if (tileIdx>=0){
@@ -24258,8 +24260,9 @@ define('ftheking/physics',[
 			},
 			move: function(entity, delta, vx, vy){
 				
-
+				var dvy = vy;
 				if (vx==undefined){
+					dvy = entity.get('physics.vy');
 					entity.set('physics.vy', entity.get('physics.vy') + (this.gravity * delta));
 					vx = entity.get('physics.vx') * delta;
 					vy = entity.get('physics.vy') * delta;
@@ -24282,44 +24285,51 @@ define('ftheking/physics',[
 							[entity.get('physics.width')/2, 0],
 							[-entity.get('physics.width')/2, 0]
 						]
-						var horzMove = true;
-						var vertMove = true;
-						for (var i = testPoints.length - 1; i >= 0; i--) {
-							testPoints[i];
-							var newTile = this.map.getTileAtPos(testPoints[i][0]+vx+tx+entity.get('physics.offsetx'), testPoints[i][1]+vy+ty+entity.get('physics.offsety'));
-							if (newTile){
-							    if (!newTile.data.passable){
-									if (horzMove){
-									    horzTile = this.map.getTileAtPos(testPoints[i][0]+vx+tx+entity.get('physics.offsetx'), testPoints[i][1]+ty+entity.get('physics.offsety'));
-										if (horzTile){
-										    if (!horzTile.data.passable){
-											    horzMove=false;
-											    entity.set('physics.vx', 0);
-										    }
-										}
+					//var testPoints = [[0, entity.get('physics.height')/2]]
+					var horzMove = true;
+					var vertMove = true;
+					for (var i = testPoints.length - 1; i >= 0; i--) {
+						testPoints[i];
+						var newTile = this.map.getTileAtPos(testPoints[i][0]+vx+tx+entity.get('physics.offsetx'), testPoints[i][1]+vy+ty+entity.get('physics.offsety'));
+						var offsetx = 0;
+						var offsety = 0;
+						if (newTile){
+						    if (!newTile.data.passable){
+								if (horzMove){
+								    horzTile = this.map.getTileAtPos(testPoints[i][0]+vx+tx+entity.get('physics.offsetx'), testPoints[i][1]+ty+entity.get('physics.offsety'));
+									if (horzTile){
+									    if (!horzTile.data.passable){
+										    horzMove=false;
+										    entity.set('physics.vx', 0);
+									    }
 									}
-									if (vertMove){
-									    vertTile = this.map.getTileAtPos(testPoints[i][0]+tx+entity.get('physics.offsetx'), testPoints[i][1]+vy+ty+entity.get('physics.offsety'));
-										if (vertTile){
-										    if (!vertTile.data.passable){
-											    vertMove=false;
-											    entity.set('physics.vy', 0);
-											    if (vy>0){
-											    	entity.physics.grounded = true;
-											    	entity.set('physics.vx', entity.get('physics.vx')*0.9)
-											    }
+								}
+								if (vertMove){
+								    vertTile = this.map.getTileAtPos(testPoints[i][0]+tx+entity.get('physics.offsetx'), testPoints[i][1]+vy+ty+entity.get('physics.offsety'));
+									if (vertTile){
+									    if (!vertTile.data.passable){
+										    vertMove=false;
+										    entity.set('physics.vy', 0);
+										    if (dvy>=0){
+										    	entity.physics.grounded = true;
+										    	console.log('Grounded')
+										    	entity.set('physics.vx', entity.get('physics.vx')*0.9)
 										    }
-										}
+										    if (vertTile.data.lethal){
+										    	this.state.killEntity(entity);
+										    }
+									    }
 									}
-							    }
-							}
-							if (!horzMove){
-								ptx=tx;
-							}
-							if (!vertMove){
-								pty=ty;
-							}
-						};
+								}
+						    }
+						}
+						if (!horzMove){
+							ptx=tx;
+						}
+						if (!vertMove){
+							pty=ty;
+						}
+					};
 						
 				}
 				if (tx!=ptx||ty!=pty){
@@ -24775,6 +24785,7 @@ define('ftheking/components/anim',[
 			},
 			setAnim: function(anim){
 				if (this._current!=anim){
+					console.log('Set Anim', anim)
 					this._current=anim;
 					this._currentTrack = this._tracks[anim];
 					this._index = 0;
@@ -25760,8 +25771,11 @@ define('ftheking/subzerostate',[
 
 				this.pruneEntities();
 				if (this.pc){
-					this.containers.map.position.x = Math.min(0,-this.pc.get('xform.tx')+this.game.width/(2*this._scale));
-					this.containers.map.position.y = Math.max((-this.map.tileSize * this.map.height * 0.5)+this.game.renderer.height, 300-this.pc.get('xform.ty')+this.game.height/(2*this._scale));
+					var pcx = -this.pc.get('xform.tx')+this.game.width/(2*this._scale);
+					var pcy = -this.pc.get('xform.ty')+this.game.height/(2*this._scale);
+					var maxy = -(this.map.height * this.map.tileSize) + (this.game.renderer.height*2);
+					this.containers.map.position.x = Math.min(0, pcx);
+					this.containers.map.position.y = Math.max(maxy, Math.min(0, pcy));
 				}	
 				this.map.render(-this.containers.map.position.x, -this.containers.map.position.y);
 				for (var i = this._entity_ids.length - 1; i >= 0; i--) {

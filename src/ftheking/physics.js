@@ -72,8 +72,9 @@ define([
 			},
 			move: function(entity, delta, vx, vy){
 				
-
+				var dvy = vy;
 				if (vx==undefined){
+					dvy = entity.get('physics.vy');
 					entity.set('physics.vy', entity.get('physics.vy') + (this.gravity * delta));
 					vx = entity.get('physics.vx') * delta;
 					vy = entity.get('physics.vy') * delta;
@@ -96,44 +97,51 @@ define([
 							[entity.get('physics.width')/2, 0],
 							[-entity.get('physics.width')/2, 0]
 						]
-						var horzMove = true;
-						var vertMove = true;
-						for (var i = testPoints.length - 1; i >= 0; i--) {
-							testPoints[i];
-							var newTile = this.map.getTileAtPos(testPoints[i][0]+vx+tx+entity.get('physics.offsetx'), testPoints[i][1]+vy+ty+entity.get('physics.offsety'));
-							if (newTile){
-							    if (!newTile.data.passable){
-									if (horzMove){
-									    horzTile = this.map.getTileAtPos(testPoints[i][0]+vx+tx+entity.get('physics.offsetx'), testPoints[i][1]+ty+entity.get('physics.offsety'));
-										if (horzTile){
-										    if (!horzTile.data.passable){
-											    horzMove=false;
-											    entity.set('physics.vx', 0);
-										    }
-										}
+					//var testPoints = [[0, entity.get('physics.height')/2]]
+					var horzMove = true;
+					var vertMove = true;
+					for (var i = testPoints.length - 1; i >= 0; i--) {
+						testPoints[i];
+						var newTile = this.map.getTileAtPos(testPoints[i][0]+vx+tx+entity.get('physics.offsetx'), testPoints[i][1]+vy+ty+entity.get('physics.offsety'));
+						var offsetx = 0;
+						var offsety = 0;
+						if (newTile){
+						    if (!newTile.data.passable){
+								if (horzMove){
+								    horzTile = this.map.getTileAtPos(testPoints[i][0]+vx+tx+entity.get('physics.offsetx'), testPoints[i][1]+ty+entity.get('physics.offsety'));
+									if (horzTile){
+									    if (!horzTile.data.passable){
+										    horzMove=false;
+										    entity.set('physics.vx', 0);
+									    }
 									}
-									if (vertMove){
-									    vertTile = this.map.getTileAtPos(testPoints[i][0]+tx+entity.get('physics.offsetx'), testPoints[i][1]+vy+ty+entity.get('physics.offsety'));
-										if (vertTile){
-										    if (!vertTile.data.passable){
-											    vertMove=false;
-											    entity.set('physics.vy', 0);
-											    if (vy>0){
-											    	entity.physics.grounded = true;
-											    	entity.set('physics.vx', entity.get('physics.vx')*0.9)
-											    }
+								}
+								if (vertMove){
+								    vertTile = this.map.getTileAtPos(testPoints[i][0]+tx+entity.get('physics.offsetx'), testPoints[i][1]+vy+ty+entity.get('physics.offsety'));
+									if (vertTile){
+									    if (!vertTile.data.passable){
+										    vertMove=false;
+										    entity.set('physics.vy', 0);
+										    if (dvy>=0){
+										    	entity.physics.grounded = true;
+										    	console.log('Grounded')
+										    	entity.set('physics.vx', entity.get('physics.vx')*0.9)
 										    }
-										}
+										    if (vertTile.data.lethal){
+										    	this.state.killEntity(entity);
+										    }
+									    }
 									}
-							    }
-							}
-							if (!horzMove){
-								ptx=tx;
-							}
-							if (!vertMove){
-								pty=ty;
-							}
-						};
+								}
+						    }
+						}
+						if (!horzMove){
+							ptx=tx;
+						}
+						if (!vertMove){
+							pty=ty;
+						}
+					};
 						
 				}
 				if (tx!=ptx||ty!=pty){

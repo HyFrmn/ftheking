@@ -212,8 +212,11 @@ define([
 
 				this.pruneEntities();
 				if (this.pc){
-					this.containers.map.position.x = Math.min(0,-this.pc.get('xform.tx')+this.game.width/(2*this._scale));
-					this.containers.map.position.y = Math.max((-this.map.tileSize * this.map.height * 0.5)+this.game.renderer.height, 300-this.pc.get('xform.ty')+this.game.height/(2*this._scale));
+					var pcx = -this.pc.get('xform.tx')+this.game.width/(2*this._scale);
+					var pcy = -this.pc.get('xform.ty')+this.game.height/(2*this._scale);
+					var maxy = -(this.map.height * this.map.tileSize) + (this.game.renderer.height*2);
+					this.containers.map.position.x = Math.min(0, pcx);
+					this.containers.map.position.y = Math.max(maxy, Math.min(0, pcy));
 				}	
 				this.map.render(-this.containers.map.position.x, -this.containers.map.position.y);
 				for (var i = this._entity_ids.length - 1; i >= 0; i--) {
