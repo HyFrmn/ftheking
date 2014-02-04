@@ -24,15 +24,14 @@ define([
         var Loader = Class.extend({
             init: function(noAudio){
                 this._hasAudio = false;
-                if (!noAudio){
+                if (true){
                     if (createjs){
                         if (createjs.Sound.initializeDefaultPlugins()) {
-
-                            //createjs.Sound.registerPlugins([createjs.WebAudioPlugin]);
+                            createjs.Sound.registerPlugins([createjs.WebAudioPlugin, createjs.HTMLAudioPlugin]);
                             createjs.Sound.addEventListener("fileload", this._loadAudio.bind(this));
                             this._soundPromises = {};
                             console.log('Audio Config')
-                            this._hasAudio = true;
+                            this._hasAudio = false;
                         } else {
                             console.log('No Audio')
                         }

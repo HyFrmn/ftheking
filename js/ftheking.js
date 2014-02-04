@@ -22659,15 +22659,14 @@ define('sge/loader',[
         var Loader = Class.extend({
             init: function(noAudio){
                 this._hasAudio = false;
-                if (!noAudio){
+                if (true){
                     if (createjs){
                         if (createjs.Sound.initializeDefaultPlugins()) {
-
-                            //createjs.Sound.registerPlugins([createjs.WebAudioPlugin]);
+                            createjs.Sound.registerPlugins([createjs.WebAudioPlugin, createjs.HTMLAudioPlugin]);
                             createjs.Sound.addEventListener("fileload", this._loadAudio.bind(this));
                             this._soundPromises = {};
                             console.log('Audio Config')
-                            this._hasAudio = true;
+                            this._hasAudio = false;
                         } else {
                             console.log('No Audio')
                         }
@@ -24312,7 +24311,6 @@ define('ftheking/physics',[
 										    entity.set('physics.vy', 0);
 										    if (dvy>=0){
 										    	entity.physics.grounded = true;
-										    	console.log('Grounded')
 										    	entity.set('physics.vx', entity.get('physics.vx')*0.9)
 										    }
 										    if (vertTile.data.lethal){
@@ -24785,7 +24783,6 @@ define('ftheking/components/anim',[
 			},
 			setAnim: function(anim){
 				if (this._current!=anim){
-					console.log('Set Anim', anim)
 					this._current=anim;
 					this._currentTrack = this._tracks[anim];
 					this._index = 0;
@@ -26037,6 +26034,8 @@ define('ftheking/mainmenu',[
             },
             tick: function(){
                 if (this.input.isPressed('space')){
+                    this.game.data.points = 0;
+                    this.game.data.map = 'level1';
                     TweenLite.to(this.container, 1, {alpha: 0, onComplete: function(){
                         this.game.createState('game');
                         this.game.changeState('load');

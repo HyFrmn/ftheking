@@ -21,7 +21,6 @@ define([
 			},
 			setAnim: function(anim){
 				if (this._current!=anim){
-					console.log('Set Anim', anim)
 					this._current=anim;
 					this._currentTrack = this._tracks[anim];
 					this._index = 0;

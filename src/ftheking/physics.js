@@ -124,7 +124,6 @@ define([
 										    entity.set('physics.vy', 0);
 										    if (dvy>=0){
 										    	entity.physics.grounded = true;
-										    	console.log('Grounded')
 										    	entity.set('physics.vx', entity.get('physics.vx')*0.9)
 										    }
 										    if (vertTile.data.lethal){
