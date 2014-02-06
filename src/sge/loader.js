@@ -31,7 +31,7 @@ define([
                             createjs.Sound.addEventListener("fileload", this._loadAudio.bind(this));
                             this._soundPromises = {};
                             console.log('Audio Config')
-                            this._hasAudio = false;
+                            this._hasAudio = true;
                         } else {
                             console.log('No Audio')
                         }
@@ -96,7 +96,6 @@ define([
                             texture = new PIXI.Texture(tex.texture, {x: x*width, y: y*height, width: width, height: height});
                             PIXI.TextureCache[textureName+'-'+frame] = texture;
                             frame++;
-                            
                         }
                     }
                     defered.resolve(tex);

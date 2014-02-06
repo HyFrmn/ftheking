@@ -11,11 +11,11 @@ define([
 				this.state.containers.hud.addChild(this.container)
 			},
 			createDisplay: function(container){
-				this._pointsText = new PIXI.BitmapText('Points: 0000', {font: '64px marker_pink'});
+				this._pointsText = new PIXI.BitmapText('Points: 0000', {font: '32px marker_pink'});
 				this.container.addChild(this._pointsText);
 				this._pointsText.position.y = 20;
-				this._pointsText.position.x = this.state.game.renderer.width*2 - this._pointsText.width - 40;
-				this._pointsText.setText('Points: ' + this.game.data.points)
+				this._pointsText.position.x = this.state.game.renderer.width - this._pointsText.width - 40;
+				this._pointsText.setText('Points: ' + this.game.data.points);
 			},
 			addPoints: function(points){
 				this.game.data.points += points;

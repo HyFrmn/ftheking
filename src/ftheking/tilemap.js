@@ -13,7 +13,7 @@ define([
 				this.renderer = renderer;
 				this.width = width;
 				this.height = height;
-				this.tileSize = 70;
+				this.tileSize = 16;
 				this._tileTextures = [];
 
 				this.tiles = [];
@@ -98,7 +98,6 @@ define([
 				var pixelWidth = this.width * this.tileSize;
 				var pixelHeight = this.height * this.tileSize;
 				var chunks = [Math.ceil(pixelWidth/this._chunkSize),Math.ceil(pixelHeight/this._chunkSize)];
-				console.log('Chunks', chunks)
 				for (var x=0; x<chunks[0]; x++){
 					for (var y=0; y<chunks[1]; y++){
 						this.preRenderChunk(x, y);

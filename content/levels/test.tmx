@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" width="37" height="21" tilewidth="16" tileheight="16">
+ <tileset firstgid="1" name="base" tilewidth="16" tileheight="16">
+  <image source="../tiles/base.png" trans="00ff00" width="128" height="16"/>
+ </tileset>
+ <layer name="_guide" width="37" height="21">
+  <data encoding="base64" compression="zlib">
+   eJztw8EJAAAMA6GD7L9zPx1DwVVTVVX9B2d5CRw=
+  </data>
+ </layer>
+ <layer name="base" width="37" height="21">
+  <data encoding="base64" compression="zlib">
+   eJxjYBgFo2AUjIJRMApGwSgYnoARDQ8GwISGBwOglZvQw58UjO4mbGpYcGBSzB3F2DEA6KQA5A==
+  </data>
+ </layer>
+ <objectgroup name="entities" width="37" height="21">
+  <object name="pc" type="pc" gid="5" x="64" y="288"/>
+ </objectgroup>
+</map>

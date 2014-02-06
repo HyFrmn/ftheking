@@ -22666,7 +22666,7 @@ define('sge/loader',[
                             createjs.Sound.addEventListener("fileload", this._loadAudio.bind(this));
                             this._soundPromises = {};
                             console.log('Audio Config')
-                            this._hasAudio = false;
+                            this._hasAudio = true;
                         } else {
                             console.log('No Audio')
                         }
@@ -22731,7 +22731,6 @@ define('sge/loader',[
                             texture = new PIXI.Texture(tex.texture, {x: x*width, y: y*height, width: width, height: height});
                             PIXI.TextureCache[textureName+'-'+frame] = texture;
                             frame++;
-                            
                         }
                     }
                     defered.resolve(tex);
@@ -22847,7 +22846,7 @@ define('ftheking/tilemap',[
 				this.renderer = renderer;
 				this.width = width;
 				this.height = height;
-				this.tileSize = 70;
+				this.tileSize = 16;
 				this._tileTextures = [];
 
 				this.tiles = [];
@@ -22932,7 +22931,6 @@ define('ftheking/tilemap',[
 				var pixelWidth = this.width * this.tileSize;
 				var pixelHeight = this.height * this.tileSize;
 				var chunks = [Math.ceil(pixelWidth/this._chunkSize),Math.ceil(pixelHeight/this._chunkSize)];
-				console.log('Chunks', chunks)
 				for (var x=0; x<chunks[0]; x++){
 					for (var y=0; y<chunks[1]; y++){
 						this.preRenderChunk(x, y);
@@ -23014,7 +23012,8 @@ define('ftheking/tiledlevel',[
         
 		var TiledLevel = function(state, map, levelData){
 			var defered = new sge.When.defer();
-			var tileset = new PIXI.ImageLoader('content/tilesets/basetiles.png', false);
+			var tileset = new PIXI.ImageLoader('content/tiles/base.png', false);
+			
 			tileset.addEventListener("loaded", function(event){
 
 				var layerData = {};
@@ -23027,13 +23026,14 @@ define('ftheking/tiledlevel',[
 						var yTileCount = levelData.tilesets[0].imageheight / levelData.tilesets[0].tileheight;
 						for (var i = 0; i < (xTileCount * yTileCount); i++) {
 							var tex = new PIXI.Texture(tileset.texture.baseTexture, {x: (i % xTileCount) * map.tileSize , y: Math.floor(i / xTileCount) * map.tileSize, width:map.tileSize, height: map.tileSize});
+							
 							map._tileTextures.push(tex);
 						};
 						for (var i = layer.data.length - 1; i >= 0; i--) {
 							var tileIdx = layer.data[i]-1;
 							if (layerName=='base'){
 								map.tiles[i].data.passable = (tileIdx<0);
-								map.tiles[i].data.lethal = (tileIdx==21);
+								map.tiles[i].data.lethal = (tileIdx==5);
 								
 							} 
 							if (layerName!='terrain'){
@@ -24511,13 +24511,13 @@ define('ftheking/components/chara',[
 			tick: function(delta){
 				
 				if (this.get('movement.vx')<0){
-					this.set('sprite.scalex', -4);
+					this.set('sprite.scalex', -2);
 					this.set('movement.dir', -1);
 
 				}
 
 				if (this.get('movement.vx')>0){
-					this.set('sprite.scalex', 4);
+					this.set('sprite.scalex', 2);
 					this.set('movement.dir', 1);
 				}
 
@@ -24834,7 +24834,8 @@ define('ftheking/components/swirl',[
 			contacted: function(e){
 				if (e.tags.indexOf('pc')>=0){
 					this.state.killEntity(this.entity);
-					this.state.addPoints(10)
+					this.state.addPoints(10);
+					createjs.Sound.play('pickup');
 				}
 			},
 		});		
@@ -24847,7 +24848,6 @@ define('ftheking/components/goal',[
 		Component.add('goal', {
 			init: function(entity, data){
 				this._super(entity, data);
-				console.log('Goal', data)
 				this._nextLevel = data.level || null;
 			},
 			register: function(state){
@@ -24945,26 +24945,29 @@ define('ftheking/components/jump',[
 				this._jumping = false;
 				this._double = false;
 				this._doubleSet = false;
+				this._jumpHeight = 350;
 			},
 			tick: function(){
 				if (this.input.isDown('space')){
 					if (this._jumping){
 						if (this._doubleSet && !this._double){
 							this._double = true;
-							this.set('physics.vy', -700);
+							this.set('physics.vy', -this._jumpHeight*1.5);
+							createjs.Sound.play('jump');
 						}
 					} else {
 						if (this.entity.physics.grounded){
-							this.set('physics.vy', -700);
+							this.set('physics.vy', -this._jumpHeight);
 							this._jumping = true;
 							this._doubleSet = false;
+							createjs.Sound.play('jump');
 						}
 					}
 				} else {
 					if (this._jumping){
 						this._doubleSet = true;
 						if (this.get('physics.vy')<0){
-							this.set('physics.vy', this.get('physics.vy') * 0.33);
+							this.set('physics.vy', this.get('physics.vy') * 0.16);
 						}
 					}
 					if (this.entity.physics.grounded){
@@ -25484,11 +25487,11 @@ define('ftheking/hud',[
 				this.state.containers.hud.addChild(this.container)
 			},
 			createDisplay: function(container){
-				this._pointsText = new PIXI.BitmapText('Points: 0000', {font: '64px marker_pink'});
+				this._pointsText = new PIXI.BitmapText('Points: 0000', {font: '32px marker_pink'});
 				this.container.addChild(this._pointsText);
 				this._pointsText.position.y = 20;
-				this._pointsText.position.x = this.state.game.renderer.width*2 - this._pointsText.width - 40;
-				this._pointsText.setText('Points: ' + this.game.data.points)
+				this._pointsText.position.x = this.state.game.renderer.width - this._pointsText.width - 40;
+				this._pointsText.setText('Points: ' + this.game.data.points);
 			},
 			addPoints: function(points){
 				this.game.data.points += points;
@@ -25580,7 +25583,7 @@ define('ftheking/subzerostate',[
 
 				this.stage = new PIXI.Stage(0xD5F5F3);
 				this.container = new PIXI.DisplayObjectContainer();
-				this._scale = 0.5;
+				this._scale = 1;
 				
 				this.container.scale.x *= this._scale;
 				this.container.scale.y *= this._scale
@@ -25597,7 +25600,7 @@ define('ftheking/subzerostate',[
 				this.curtain = new PIXI.Graphics();
 				//*
 				this.curtain.beginFill('0x000000');
-				this.curtain.drawRect(0,0,game.width*2, game.height*2);
+				this.curtain.drawRect(0,0,game.width*this._scale, game.height*this._scale);
 				this.curtain.endFill();
 				//*/
 				this.container.addChild(this.curtain);
@@ -25651,7 +25654,6 @@ define('ftheking/subzerostate',[
 				this.initGame();
 			},
 			changeLevel: function(map, location){
-				console.log('Change Level', map)
 				this.game.changeState('load');
 				//TODO: MOVE TO PERSIST SYSTEM (CurrentGame? Story? SavedGame?);
 				this.game.data.persist.maps[this.game.data.map] = {
@@ -25721,8 +25723,10 @@ define('ftheking/subzerostate',[
 				this.hud.createDisplay(this.containers.hud);
 				this.game.getState('load').ready('game');
 				TweenLite.to(this.curtain, 1, {alpha: 0, delay:1, onComplete: function(){
+					//if @DEBUG
 					console.log('Game Started')
-						this.container.removeChild(this.curtain);
+					//endif
+					this.container.removeChild(this.curtain);
 					}.bind(this)
 				});
 				
@@ -25732,7 +25736,6 @@ define('ftheking/subzerostate',[
 				this.pc = null;
 				this.createTimeout(function(){
 					if (!this.getEntity('pc')){
-						console.log('Spawn')
 						this._lives--;
 						if (this._lives>0){
 							pc = this.factory.create('pc', {xform: {tx: this._spawnPoint[0], ty: this._spawnPoint[1]}});
@@ -25770,7 +25773,7 @@ define('ftheking/subzerostate',[
 				if (this.pc){
 					var pcx = -this.pc.get('xform.tx')+this.game.width/(2*this._scale);
 					var pcy = -this.pc.get('xform.ty')+this.game.height/(2*this._scale);
-					var maxy = -(this.map.height * this.map.tileSize) + (this.game.renderer.height*2);
+					var maxy = -(this.map.height * this.map.tileSize) + (this.game.renderer.height*this._scale);
 					this.containers.map.position.x = Math.min(0, pcx);
 					this.containers.map.position.y = Math.max(maxy, Math.min(0, pcy));
 				}	
@@ -25818,7 +25821,6 @@ define('ftheking/subzerostate',[
 			},
 			
 			removeEntity: function(e){
-				console.log('Removing', e.name)
 				e.deregister(this);
 				var id = e.id;
 				var idx = this._entity_ids.indexOf(id);
@@ -25897,7 +25899,6 @@ define('ftheking/subzerostate',[
 			},
 
 			get: function(path){
-				console.log(this.game.data.persist.vars, path, this.game.data.persist.vars[path]);
 				return this.game.data.persist.vars[path];
 			},
 

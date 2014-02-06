@@ -8,16 +8,16 @@
         },
         "sprite" : {
             "container": "entities",
-            "src" :  "hero",
-            "offsetx" : -17,
-            "offsety" : -34 ,
-            "scalex" : 4,
-            "scaley" : 4
+            "src" :  "candy",
+            "offsetx" : -7,
+            "offsety" : -16,
+            "scalex" : 2,
+            "scaley" : 2
         },
         "physics" : {
-            "width" : 35,
-            "height": 120,
-            "offsety" : -60
+            "width" : 8,
+            "height": 32,
+            "offsety" : -16
         },
         "chara" : {
             
@@ -31,20 +31,20 @@
         "controls" : {},
         "interact.control" : {},
         "sprite" : {
-            "src" :  "hero"
+            "src" :  "tinyhero"
         },
         "attack" : {},
         "anim" : {
             "tracks" : {
                 "attack" : {
-                    "frames" : [0, 1],
+                    "frames" : [12,13,14,15],
                     "once" : true
                 },
                 "idle" : {
                     "frames" : [0]
                 },
                 "walk" : {
-                    "frames" : [4,5,6,7]
+                    "frames" : [0,1]
                 }
             }
         },
@@ -65,14 +65,14 @@
         "anim" : {
             "tracks" : {
                 "attack" : {
-                    "frames" : [0, 1],
+                    "frames" : [4,5,6,7],
                     "once" : true
                 },
                 "idle" : {
-                    "frames" : [4]
+                    "frames" : [0]
                 },
                 "walk" : {
-                    "frames" : [4,5,6,7]
+                    "frames" : [0,1]
                 }
             }
         },
@@ -87,10 +87,19 @@
         }
     },
     "goal" : {
+        "sprite" : {
+            "src" : "candy",
+            "container" : "entities",
+            "frame" : 2,
+            "scalex" : 2,
+            "scaley" : 2,
+            "offsety" : -16,
+            "offsetx" : -8
+        },
         "physics" : {
-            "width" : 35,
-            "height": 120,
-            "offsety" : -60,
+            "width" : 16,
+            "height": 32,
+            "offsety" : -16,
             "type" : 2
         },
         "goal": {}
@@ -100,14 +109,16 @@
             "inherit" : "trigger"
         },
         "sprite" : {
-            "src" : "swirl_red",
+            "src" : "candy",
             "container" : "entities",
-            "offsety" : -40,
-            "offsetx" : -40
+            "offsety" : -8,
+            "offsetx" : -8,
+            "scalex" : 2,
+            "scaley" : 2
         },
         "physics" : {
-            "width" : 70,
-            "height": 70,
+            "width" : 32,
+            "height": 32,
             "type" : 2
         },
         "swirl" : {}

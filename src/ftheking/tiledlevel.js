@@ -16,7 +16,8 @@ define([
         
 		var TiledLevel = function(state, map, levelData){
 			var defered = new sge.When.defer();
-			var tileset = new PIXI.ImageLoader('content/tilesets/basetiles.png', false);
+			var tileset = new PIXI.ImageLoader('content/tiles/base.png', false);
+			
 			tileset.addEventListener("loaded", function(event){
 
 				var layerData = {};
@@ -29,13 +30,14 @@ define([
 						var yTileCount = levelData.tilesets[0].imageheight / levelData.tilesets[0].tileheight;
 						for (var i = 0; i < (xTileCount * yTileCount); i++) {
 							var tex = new PIXI.Texture(tileset.texture.baseTexture, {x: (i % xTileCount) * map.tileSize , y: Math.floor(i / xTileCount) * map.tileSize, width:map.tileSize, height: map.tileSize});
+							
 							map._tileTextures.push(tex);
 						};
 						for (var i = layer.data.length - 1; i >= 0; i--) {
 							var tileIdx = layer.data[i]-1;
 							if (layerName=='base'){
 								map.tiles[i].data.passable = (tileIdx<0);
-								map.tiles[i].data.lethal = (tileIdx==21);
+								map.tiles[i].data.lethal = (tileIdx==5);
 								
 							} 
 							if (layerName!='terrain'){
@@ -142,9 +144,6 @@ define([
 								// @endif
 							}
 							entity.name = name;
-							// @if DEBUG
-							console.warn('Created Entity:', name, entityData.type, entity.get('xform.tx'), entity.get('xform.ty'));
-							// @endif
 							
 							if (spawn){
 								state.addEntity(entity);	

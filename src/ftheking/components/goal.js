@@ -5,7 +5,6 @@ define([
 		Component.add('goal', {
 			init: function(entity, data){
 				this._super(entity, data);
-				console.log('Goal', data)
 				this._nextLevel = data.level || null;
 			},
 			register: function(state){

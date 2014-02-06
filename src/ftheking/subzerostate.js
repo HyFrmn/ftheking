@@ -24,7 +24,7 @@ define([
 
 				this.stage = new PIXI.Stage(0xD5F5F3);
 				this.container = new PIXI.DisplayObjectContainer();
-				this._scale = 0.5;
+				this._scale = 1;
 				
 				this.container.scale.x *= this._scale;
 				this.container.scale.y *= this._scale
@@ -41,7 +41,7 @@ define([
 				this.curtain = new PIXI.Graphics();
 				//*
 				this.curtain.beginFill('0x000000');
-				this.curtain.drawRect(0,0,game.width*2, game.height*2);
+				this.curtain.drawRect(0,0,game.width*this._scale, game.height*this._scale);
 				this.curtain.endFill();
 				//*/
 				this.container.addChild(this.curtain);
@@ -95,7 +95,6 @@ define([
 				this.initGame();
 			},
 			changeLevel: function(map, location){
-				console.log('Change Level', map)
 				this.game.changeState('load');
 				//TODO: MOVE TO PERSIST SYSTEM (CurrentGame? Story? SavedGame?);
 				this.game.data.persist.maps[this.game.data.map] = {
@@ -165,8 +164,10 @@ define([
 				this.hud.createDisplay(this.containers.hud);
 				this.game.getState('load').ready('game');
 				TweenLite.to(this.curtain, 1, {alpha: 0, delay:1, onComplete: function(){
+					//if @DEBUG
 					console.log('Game Started')
-						this.container.removeChild(this.curtain);
+					//endif
+					this.container.removeChild(this.curtain);
 					}.bind(this)
 				});
 				
@@ -176,7 +177,6 @@ define([
 				this.pc = null;
 				this.createTimeout(function(){
 					if (!this.getEntity('pc')){
-						console.log('Spawn')
 						this._lives--;
 						if (this._lives>0){
 							pc = this.factory.create('pc', {xform: {tx: this._spawnPoint[0], ty: this._spawnPoint[1]}});
@@ -214,7 +214,7 @@ define([
 				if (this.pc){
 					var pcx = -this.pc.get('xform.tx')+this.game.width/(2*this._scale);
 					var pcy = -this.pc.get('xform.ty')+this.game.height/(2*this._scale);
-					var maxy = -(this.map.height * this.map.tileSize) + (this.game.renderer.height*2);
+					var maxy = -(this.map.height * this.map.tileSize) + (this.game.renderer.height*this._scale);
 					this.containers.map.position.x = Math.min(0, pcx);
 					this.containers.map.position.y = Math.max(maxy, Math.min(0, pcy));
 				}	
@@ -262,7 +262,6 @@ define([
 			},
 			
 			removeEntity: function(e){
-				console.log('Removing', e.name)
 				e.deregister(this);
 				var id = e.id;
 				var idx = this._entity_ids.indexOf(id);
@@ -341,7 +340,6 @@ define([
 			},
 
 			get: function(path){
-				console.log(this.game.data.persist.vars, path, this.game.data.persist.vars[path]);
 				return this.game.data.persist.vars[path];
 			},
 

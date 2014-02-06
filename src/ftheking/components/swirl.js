@@ -16,7 +16,8 @@ define([
 			contacted: function(e){
 				if (e.tags.indexOf('pc')>=0){
 					this.state.killEntity(this.entity);
-					this.state.addPoints(10)
+					this.state.addPoints(10);
+					createjs.Sound.play('pickup');
 				}
 			},
 		});		

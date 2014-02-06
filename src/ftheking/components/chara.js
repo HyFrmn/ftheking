@@ -36,13 +36,13 @@ define([
 			tick: function(delta){
 				
 				if (this.get('movement.vx')<0){
-					this.set('sprite.scalex', -4);
+					this.set('sprite.scalex', -2);
 					this.set('movement.dir', -1);
 
 				}
 
 				if (this.get('movement.vx')>0){
-					this.set('sprite.scalex', 4);
+					this.set('sprite.scalex', 2);
 					this.set('movement.dir', 1);
 				}
 

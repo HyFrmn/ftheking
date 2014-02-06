@@ -1,8 +1,8 @@
 {
     "sprites" : [
-        ["hero", [35,35]],
+        ["tinyhero", [16,16]],
         ["enemy", [35,35]],
-        ["swirl_red", [80,80]]
+        ["candy", [16,16]]
     ],
     "images" : [
 
@@ -13,7 +13,7 @@
         "candy_markerpink"
     ],
     "tiles" : [
-        "basetiles"
+        "base"
     ],
     "entities" : [
         "standard"
@@ -23,9 +23,8 @@
         "test"
     ],
     "audio" : [
-        "menu.selection.click",
-        "select.up",
-        "select.down",
-        "explosion"
+        "hurt",
+        "pickup",
+        "jump"
     ]
 }
