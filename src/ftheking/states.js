@@ -15,7 +15,7 @@ define([
                     */
                    
                     var text = new PIXI.BitmapText('Win', {font: '96px 8bit', align: 'center'});
-                    text.position.x = game.renderer.width / 2;
+                    text.position.x = (game.renderer.width / 2) - text.width/2;
                     text.position.y = game.renderer.height / 2;
                     this.container.addChild(text);
 
@@ -48,7 +48,7 @@ define([
                     */
                    
                     var text = new PIXI.BitmapText('Lose', {font: '96px 8bit', align: 'center'});
-                    text.position.x = game.renderer.width / 2;
+                    text.position.x =  (game.renderer.width / 2) - text.width/2;
                     text.position.y = game.renderer.height / 2;
                     this.container.addChild(text);
 

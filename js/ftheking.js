@@ -26037,7 +26037,7 @@ define('ftheking/mainmenu',[
             tick: function(){
                 if (this.input.isPressed('space')){
                     this.game.data.points = 0;
-                    this.game.data.map = 'level2';
+                    this.game.data.map = 'level1';
                     TweenLite.to(this.container, 1, {alpha: 0, onComplete: function(){
                         this.game.createState('game');
                         this.game.changeState('load');
@@ -26366,7 +26366,7 @@ define('ftheking/states',[
                     */
                    
                     var text = new PIXI.BitmapText('Win', {font: '96px 8bit', align: 'center'});
-                    text.position.x = game.renderer.width / 2;
+                    text.position.x = (game.renderer.width / 2) - text.width/2;
                     text.position.y = game.renderer.height / 2;
                     this.container.addChild(text);
 
@@ -26399,7 +26399,7 @@ define('ftheking/states',[
                     */
                    
                     var text = new PIXI.BitmapText('Lose', {font: '96px 8bit', align: 'center'});
-                    text.position.x = game.renderer.width / 2;
+                    text.position.x =  (game.renderer.width / 2) - text.width/2;
                     text.position.y = game.renderer.height / 2;
                     this.container.addChild(text);
 
