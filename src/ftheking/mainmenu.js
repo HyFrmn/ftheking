@@ -40,7 +40,7 @@ define([
             tick: function(){
                 if (this.input.isPressed('space')){
                     this.game.data.points = 0;
-                    this.game.data.map = 'level1';
+                    this.game.data.map = 'level2';
                     TweenLite.to(this.container, 1, {alpha: 0, onComplete: function(){
                         this.game.createState('game');
                         this.game.changeState('load');

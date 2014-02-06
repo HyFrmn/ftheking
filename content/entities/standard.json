@@ -21,19 +21,7 @@
         },
         "chara" : {
             
-        }
-    },
-    "pc" : {
-        "meta" : {
-            "inherit" : "chara",
-            "tagsBase" : ["pc"]
         },
-        "controls" : {},
-        "interact.control" : {},
-        "sprite" : {
-            "src" :  "tinyhero"
-        },
-        "attack" : {},
         "anim" : {
             "tracks" : {
                 "attack" : {
@@ -47,7 +35,20 @@
                     "frames" : [0,1]
                 }
             }
+        }
+    },
+    "pc" : {
+        "meta" : {
+            "inherit" : "chara",
+            "tagsBase" : ["pc"]
         },
+        "controls" : {},
+        "interact.control" : {},
+        "sprite" : {
+            "src" :  "tinyhero"
+        },
+        "attack" : {},
+        
         "chara" : {
             "speed" : 280
         },
@@ -59,24 +60,13 @@
             "tagsBase" : ["enemy"]
         },
         "sprite" : {
-            "src" :  "enemy"
+            "src" :  "repear"
         },
         "attack" : {},
-        "anim" : {
-            "tracks" : {
-                "attack" : {
-                    "frames" : [4,5,6,7],
-                    "once" : true
-                },
-                "idle" : {
-                    "frames" : [0]
-                },
-                "walk" : {
-                    "frames" : [0,1]
-                }
-            }
-        },
-        "enemy" : {}
+        "enemy" : {},
+        "chara" : {
+            "speed" : 60
+        }
     },
     "trigger" : {
         "xform" : {

@@ -24300,6 +24300,7 @@ define('ftheking/physics',[
 									    if (!horzTile.data.passable){
 										    horzMove=false;
 										    entity.set('physics.vx', 0);
+										    entity.trigger('contact.wall');
 									    }
 									}
 								}
@@ -24483,7 +24484,7 @@ define('ftheking/components/chara',[
 				this.set('sprite.frame', 0);
 				this.set('movement.vx', 0);
 				this.set('movement.vy', 0);
-				this.set('movement.speed', data.speed || 140);
+				this.set('movement.speed', data.speed || 120);
 				this.set('movement.dir', 1);
 				this.set('chara.health', 2);
 				this._state = 'idle';
@@ -24881,15 +24882,15 @@ define('ftheking/components/enemy',[
 			register: function(state){
 				this._super(state);
 				this.on('contact.start', this.contacted);
+				this.on('contact.wall', this.turnaround);
 			},
 			deregister: function(){
-				this.off('contact.start', this.contacted)
+				this.off('contact.start', this.contacted);
 			},
 			turnaround: function(){
 				this.set('movement.vx', this.get('movement.vx') * -1)
 			},
 			contacted: function(e){
-				console.log('Contact!')
 				if (e.tags.indexOf('pc')>=0){
 					this.entity.attack.attackStart();
 					//e.chara.takeDamage(1);
@@ -26036,7 +26037,7 @@ define('ftheking/mainmenu',[
             tick: function(){
                 if (this.input.isPressed('space')){
                     this.game.data.points = 0;
-                    this.game.data.map = 'level1';
+                    this.game.data.map = 'level2';
                     TweenLite.to(this.container, 1, {alpha: 0, onComplete: function(){
                         this.game.createState('game');
                         this.game.changeState('load');

@@ -113,6 +113,7 @@ define([
 									    if (!horzTile.data.passable){
 										    horzMove=false;
 										    entity.set('physics.vx', 0);
+										    entity.trigger('contact.wall');
 									    }
 									}
 								}

@@ -10,15 +10,15 @@ define([
 			register: function(state){
 				this._super(state);
 				this.on('contact.start', this.contacted);
+				this.on('contact.wall', this.turnaround);
 			},
 			deregister: function(){
-				this.off('contact.start', this.contacted)
+				this.off('contact.start', this.contacted);
 			},
 			turnaround: function(){
 				this.set('movement.vx', this.get('movement.vx') * -1)
 			},
 			contacted: function(e){
-				console.log('Contact!')
 				if (e.tags.indexOf('pc')>=0){
 					this.entity.attack.attackStart();
 					//e.chara.takeDamage(1);

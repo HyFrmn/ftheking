@@ -1,7 +1,7 @@
 {
     "sprites" : [
         ["tinyhero", [16,16]],
-        ["enemy", [35,35]],
+        ["repear", [16,16]],
         ["candy", [16,16]]
     ],
     "images" : [
