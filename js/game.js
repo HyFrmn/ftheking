@@ -22,7 +22,7 @@ define([
                 maps: {}
             },
             points: 0,
-            map: getURLParameter('debug-map') || 'level1',
+            mapStart: getURLParameter('debug-map') || 'level1',
         }
         PIXI.BaseTexture.SCALE_MODE.DEFAULT = PIXI.BaseTexture.SCALE_MODE.NEAREST;
 		ftheking.createGame(options);

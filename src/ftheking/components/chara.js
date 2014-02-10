@@ -8,7 +8,7 @@ define([
 				this.set('sprite.frame', 0);
 				this.set('movement.vx', 0);
 				this.set('movement.vy', 0);
-				this.set('movement.speed', data.speed || 120);
+				this.set('movement.speed', data.speed || 90);
 				this.set('movement.dir', 1);
 				this.set('chara.health', 2);
 				this._state = 'idle';
@@ -27,7 +27,6 @@ define([
 			takeDamage: function(amount){
 				var health = this.get('chara.health');
 				var new_health = health - amount;
-				console.log('Damaged:', this.entity.name)
 				if (new_health < 0){
 					this.state.killEntity(this.entity);
 				}
@@ -70,7 +69,7 @@ define([
 					this.setAnim('stand_' + this.get('chara.dir'));
 				}
 				*/
-				this.set('physics.vx', this.get('movement.speed') * this.get('movement.vx'));
+				
 			}
 		});
 	}

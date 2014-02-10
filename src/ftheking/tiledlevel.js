@@ -122,7 +122,7 @@ define([
 								
 
 							}.bind(this));
-							eData = deepExtend(eData, {xform: {tx: entityData.x+(entityData.width/2), ty: entityData.y+entityData.height-1}}); //-32 for tiled hack.
+							eData = deepExtend(eData, {xform: {tx: entityData.x+(entityData.width/2), ty: entityData.y+entityData.height-2}}); //-32 for tiled hack.
 							
 							var spawn = true;
 							if (eData.meta!==undefined){

@@ -19,8 +19,9 @@ define([
 				this._super(state);
 				this.off('anim.set', this.setAnim);
 			},
-			setAnim: function(anim){
-				if (this._current!=anim){
+			setAnim: function(anim, force){
+				force = force===undefined ? false : true;
+				if (this._current!=anim || force){
 					this._current=anim;
 					this._currentTrack = this._tracks[anim];
 					this._index = 0;

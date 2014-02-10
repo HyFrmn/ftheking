@@ -1,4 +1,4 @@
-define([
+ define([
 	'sge',
 	'./sat'
 	], function(sge, sat){
@@ -83,21 +83,16 @@ define([
 				var tx = entity.get('xform.tx');
 				var ty = entity.get('xform.ty');
 
-				
+				var offsetx = entity.get('physics.offsetx');
+				var offsety = entity.get('physics.offsety');
+
+				var halfWidth = entity.get('physics.width')/2;
 
 				var ptx = tx + vx;
 				var pty = ty + vy;
 				entity.physics.grounded = false;
 				if (this.map){
-					var testPoints = [
-							[entity.get('physics.width')/2, entity.get('physics.height')/2],
-							[entity.get('physics.width')/2, -entity.get('physics.height')/2],
-							[-entity.get('physics.width')/2, entity.get('physics.height')/2],
-							[-entity.get('physics.width')/2, -entity.get('physics.height')/2],
-							[entity.get('physics.width')/2, 0],
-							[-entity.get('physics.width')/2, 0]
-						]
-					//var testPoints = [[0, entity.get('physics.height')/2]]
+					var testPoints = [[entity.get('physics.width')/2, entity.get('physics.height')]]
 					var horzMove = true;
 					var vertMove = true;
 					for (var i = testPoints.length - 1; i >= 0; i--) {
@@ -140,7 +135,7 @@ define([
 						}
 						if (!vertMove){
 							pty=ty;
-						}
+						}	
 					};
 						
 				}

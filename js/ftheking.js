@@ -23118,7 +23118,7 @@ define('ftheking/tiledlevel',[
 								
 
 							}.bind(this));
-							eData = deepExtend(eData, {xform: {tx: entityData.x+(entityData.width/2), ty: entityData.y+entityData.height-1}}); //-32 for tiled hack.
+							eData = deepExtend(eData, {xform: {tx: entityData.x+(entityData.width/2), ty: entityData.y+entityData.height-2}}); //-32 for tiled hack.
 							
 							var spawn = true;
 							if (eData.meta!==undefined){
@@ -24188,7 +24188,7 @@ define('ftheking/entity',[
 
   return SAT;
 }));
-define('ftheking/physics',[
+ define('ftheking/physics',[
 	'sge',
 	'./sat'
 	], function(sge, sat){
@@ -24270,21 +24270,16 @@ define('ftheking/physics',[
 				var tx = entity.get('xform.tx');
 				var ty = entity.get('xform.ty');
 
-				
+				var offsetx = entity.get('physics.offsetx');
+				var offsety = entity.get('physics.offsety');
+
+				var halfWidth = entity.get('physics.width')/2;
 
 				var ptx = tx + vx;
 				var pty = ty + vy;
 				entity.physics.grounded = false;
 				if (this.map){
-					var testPoints = [
-							[entity.get('physics.width')/2, entity.get('physics.height')/2],
-							[entity.get('physics.width')/2, -entity.get('physics.height')/2],
-							[-entity.get('physics.width')/2, entity.get('physics.height')/2],
-							[-entity.get('physics.width')/2, -entity.get('physics.height')/2],
-							[entity.get('physics.width')/2, 0],
-							[-entity.get('physics.width')/2, 0]
-						]
-					//var testPoints = [[0, entity.get('physics.height')/2]]
+					var testPoints = [[entity.get('physics.width')/2, entity.get('physics.height')]]
 					var horzMove = true;
 					var vertMove = true;
 					for (var i = testPoints.length - 1; i >= 0; i--) {
@@ -24327,7 +24322,7 @@ define('ftheking/physics',[
 						}
 						if (!vertMove){
 							pty=ty;
-						}
+						}	
 					};
 						
 				}
@@ -24465,6 +24460,7 @@ define('ftheking/components/rpgcontrols',[
 					this.entity.anim._defaultAnim = 'idle'
 				}
 				*/
+				this.set('physics.vx', this.get('movement.speed') * this.get('movement.vx'));
 				
 			},
 			register: function(state){
@@ -24484,7 +24480,7 @@ define('ftheking/components/chara',[
 				this.set('sprite.frame', 0);
 				this.set('movement.vx', 0);
 				this.set('movement.vy', 0);
-				this.set('movement.speed', data.speed || 120);
+				this.set('movement.speed', data.speed || 90);
 				this.set('movement.dir', 1);
 				this.set('chara.health', 2);
 				this._state = 'idle';
@@ -24503,7 +24499,6 @@ define('ftheking/components/chara',[
 			takeDamage: function(amount){
 				var health = this.get('chara.health');
 				var new_health = health - amount;
-				console.log('Damaged:', this.entity.name)
 				if (new_health < 0){
 					this.state.killEntity(this.entity);
 				}
@@ -24546,7 +24541,7 @@ define('ftheking/components/chara',[
 					this.setAnim('stand_' + this.get('chara.dir'));
 				}
 				*/
-				this.set('physics.vx', this.get('movement.speed') * this.get('movement.vx'));
+				
 			}
 		});
 	}
@@ -24562,28 +24557,34 @@ define('ftheking/components/attack',[
 			},
 			attackStart: function(){
 				this.entity.chara.setState('attack');
-				this.entity.anim.setAnim('attack');
+				this.entity.anim.setAnim('attack', true);
 				this.on('anim.done', this.attackEnd, {once: true})
 				var entities = this.state.findEntities(this.get('xform.tx'), this.get('xform.ty'), 140).filter(function(e){
 					return e!=this.entity;
 				}.bind(this));
 				var response = new sat.Response();
-				var hitbox = new sat.Box(new sat.Vector(this.get('xform.tx')-140,this.get('xform.ty')-105), 140, 140);
-				if (this.get('movement.dir')>0){
-					hitbox = new sat.Box(new sat.Vector(this.get('xform.tx'),this.get('xform.ty')-105), 140, 140);
+				var hitbox = new sat.Box(new sat.Vector(this.get('xform.tx'),this.get('xform.ty')-32), 64, 32);
+				var gfx = new PIXI.Graphics();
+				gfx.beginFill(0x00F900);
+				gfx.drawRect(0,0,64,32);
+				gfx.position.x = this.get('xform.tx');
+				gfx.position.y = this.get('xform.ty')-32;
+				if (this.get('movement.dir')<0){
+					gfx.position.x = this.get('xform.tx')-64;
+					hitbox = new sat.Box(new sat.Vector(this.get('xform.tx')-64,this.get('xform.ty')-32), 64, 32);
 				}
-				
+				//this.state.containers.entities.addChild(gfx);
 				for (var i = entities.length - 1; i >= 0; i--) {
 					var ep = entities[i];
 					var bRect = new sat.Box(new sat.Vector(ep.get('xform.tx')+ep.get('physics.offsetx'),ep.get('xform.ty')+ep.get('physics.offsety')), ep.get('physics.width'), ep.get('physics.height'));
 					collided = sat.testPolygonPolygon(hitbox.toPolygon(), bRect.toPolygon(), response);
 					if (collided){
-						if (this.get('movement.dir')>0){
-							ep.set('physics.vx', 100)
+						if (this.get('movement.dir')<0){
+							ep.set('physics.vx', -50)
 						} else {
-							ep.set('physics.vx', -100)
+							ep.set('physics.vx', 50)
 						}
-						ep.set('physics.vy', -100)
+						ep.set('physics.vy', -200)
 						ep.chara.takeDamage(1)
 					}
 				};
@@ -24782,8 +24783,9 @@ define('ftheking/components/anim',[
 				this._super(state);
 				this.off('anim.set', this.setAnim);
 			},
-			setAnim: function(anim){
-				if (this._current!=anim){
+			setAnim: function(anim, force){
+				force = force===undefined ? false : true;
+				if (this._current!=anim || force){
 					this._current=anim;
 					this._currentTrack = this._tracks[anim];
 					this._index = 0;
@@ -24877,7 +24879,8 @@ define('ftheking/components/enemy',[
 		Component.add('enemy', {
 			init: function(entity, data){
 				this._super(entity, data);
-				this.set('movement.vx', -1)
+				this._speed = 30;
+				this.set('physics.vx', this._speed);
 			},
 			register: function(state){
 				this._super(state);
@@ -24888,7 +24891,8 @@ define('ftheking/components/enemy',[
 				this.off('contact.start', this.contacted);
 			},
 			turnaround: function(){
-				this.set('movement.vx', this.get('movement.vx') * -1)
+				this.set('movement.dir', this.get('movement.dir') * -1)
+				this.set('sprite.scalex', this.get('movement.dir') * 2);
 			},
 			contacted: function(e){
 				if (e.tags.indexOf('pc')>=0){
@@ -24898,40 +24902,36 @@ define('ftheking/components/enemy',[
 					this.turnaround();
 				}
 			},
-			tick: function(){
+			tick: function(delta){
 				if (this.entity.physics.grounded){
-					var testY = this.get('xform.ty') + 3;
-					var tileA = this.state.map.getTileAtPos(this.get('xform.tx')-20, testY);
-					if (tileA){
-						if (tileA.data.passable){
-							this.turnaround()
-						}
-					} else {
-						this.turnaround();
+					vx=this.get('physics.vx');
+					if (vx!=0){
+							var testY = this.get('xform.ty') + 3;
+							var testTile = this.state.map.getTileAtPos(this.get('xform.tx')+(this.get('physics.width')/2*this.get('movement.dir')), testY);
+							if (testTile){
+								if (testTile.data.passable){
+									this.turnaround()
+								}
+							} else {
+								this.turnaround();
+							}
+						
 					}
-
-					var tileB = this.state.map.getTileAtPos(this.get('xform.tx')+20, testY);
-					if (tileB){
-						if (tileB.data.passable){
-							this.turnaround()
-						}
-					} else {
-						this.turnaround();
-					}
+					this.set('physics.vx', this._speed * this.get('movement.dir'))
 				}
 
-				/*
+				//*
 				var pc = this.state.getEntity('pc');
 				if (pc){
 					var dx = this.get('xform.tx') - pc.get('xform.tx');
 					var dy = this.get('xform.ty') - pc.get('xform.ty');
 
 					var dist = Math.sqrt((dx*dx) + (dy*dy));
-					if (dist<90 && Math.random()>0.9){
+					if (dist<16 && Math.random()>0.9){
 						this.entity.attack.attackStart();
 					}
 				} 
-				*/
+				//*/
 			}
 		});		
 	}
@@ -24946,14 +24946,14 @@ define('ftheking/components/jump',[
 				this._jumping = false;
 				this._double = false;
 				this._doubleSet = false;
-				this._jumpHeight = 350;
+				this._jumpHeight = 450;
 			},
 			tick: function(){
 				if (this.input.isDown('space')){
 					if (this._jumping){
 						if (this._doubleSet && !this._double){
 							this._double = true;
-							this.set('physics.vy', -this._jumpHeight*1.5);
+							this.set('physics.vy', -this._jumpHeight);
 							createjs.Sound.play('jump');
 						}
 					} else {
@@ -24962,6 +24962,12 @@ define('ftheking/components/jump',[
 							this._jumping = true;
 							this._doubleSet = false;
 							createjs.Sound.play('jump');
+						} else {
+							if (!this._double){
+								this._double = true;
+								this.set('physics.vy', -this._jumpHeight);
+								createjs.Sound.play('jump');
+							}
 						}
 					}
 				} else {
@@ -26037,7 +26043,7 @@ define('ftheking/mainmenu',[
             tick: function(){
                 if (this.input.isPressed('space')){
                     this.game.data.points = 0;
-                    this.game.data.map = 'level1';
+                    this.game.data.map = this.game.data.mapStart;
                     TweenLite.to(this.container, 1, {alpha: 0, onComplete: function(){
                         this.game.createState('game');
                         this.game.changeState('load');

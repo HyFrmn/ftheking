@@ -29,6 +29,7 @@ define([
 					this.entity.anim._defaultAnim = 'idle'
 				}
 				*/
+				this.set('physics.vx', this.get('movement.speed') * this.get('movement.vx'));
 				
 			},
 			register: function(state){

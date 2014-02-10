@@ -8,14 +8,14 @@ define([
 				this._jumping = false;
 				this._double = false;
 				this._doubleSet = false;
-				this._jumpHeight = 350;
+				this._jumpHeight = 450;
 			},
 			tick: function(){
 				if (this.input.isDown('space')){
 					if (this._jumping){
 						if (this._doubleSet && !this._double){
 							this._double = true;
-							this.set('physics.vy', -this._jumpHeight*1.5);
+							this.set('physics.vy', -this._jumpHeight);
 							createjs.Sound.play('jump');
 						}
 					} else {
@@ -24,6 +24,12 @@ define([
 							this._jumping = true;
 							this._doubleSet = false;
 							createjs.Sound.play('jump');
+						} else {
+							if (!this._double){
+								this._double = true;
+								this.set('physics.vy', -this._jumpHeight);
+								createjs.Sound.play('jump');
+							}
 						}
 					}
 				} else {
